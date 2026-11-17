@@ -147,16 +147,18 @@ Cada linha tem um potencial diário de passageiros em cada sentido, calculado pe
 \text{potencial} = K \cdot \frac{\sqrt{pop_A \cdot pop_B}}{dist}
 ```
 
-Com a população em milhares, a distância em km e K = 120, os potenciais ficam assim:
+Com a população em milhares (Censo 2022), a distância em km pelo traçado gerado e K = 120 (expoente 0,5, ou seja, a raiz), os potenciais ficam assim (valores calibrados em 17/11):
 
-| Linha | Distância aprox. (km) | Potencial por dia, por sentido |
-| --- | --- | --- |
-| Blumenau ⇄ Itajaí | 50 | 741 |
-| Itajaí ⇄ Florianópolis | 95 | 476 |
-| Blumenau ⇄ Florianópolis | 140 | 377 |
-| Ibirama ⇄ Blumenau | 70 | 142 |
-| Ibirama ⇄ Itajaí | 120 | 71 |
-| Ibirama ⇄ Florianópolis | 210 | 58 |
+| Linha | Distância (km) | Potencial por dia, por sentido | Taxa de abertura |
+| --- | --- | --- | --- |
+| Blumenau ⇄ Itajaí | 58,1 | 638 | R$ 31.896 |
+| Itajaí ⇄ Florianópolis | 93,9 | 481 | R$ 24.066 |
+| Blumenau ⇄ Florianópolis | 148,8 | 355 | R$ 17.764 |
+| Ibirama ⇄ Blumenau | 73,4 | 138 | R$ 6.924 |
+| Ibirama ⇄ Itajaí | 124,5 | 70 | R$ 3.490 |
+| Ibirama ⇄ Florianópolis | 215,2 | 58 | R$ 2.880 |
+
+A taxa de abertura é R$ 50 por passageiro do potencial diário.
 
 O preço ajusta esse potencial. Cada linha tem um preço de referência, e cobrar acima dele afasta passageiros:
 
@@ -186,28 +188,40 @@ O preço ajusta esse potencial. Cada linha tem um preço de referência, e cobra
 
 Todos andam a 60 km/h de média.
 
-| Modelo | Lugares | Conforto | Consumo (km/l) | Preço |
-| --- | --- | --- | --- | --- |
-| Micro-ônibus usado | 24 | 0,9 | 4,5 | R$ 60 mil |
-| Convencional | 44 | 1,0 | 3,2 | R$ 180 mil |
-| Rodoviário | 46 | 1,2 | 2,8 | R$ 350 mil |
+| Modelo | Nome no jogo | Lugares | Conforto | Consumo (km/l) | Preço |
+| --- | --- | --- | --- | --- | --- |
+| Micro-ônibus usado | Micro Vale 24 (usado) | 24 | 0,9 | 4,5 | R$ 20 mil |
+| Convencional | Convencional Serra 44 | 44 | 1,0 | 3,2 | R$ 120 mil |
+| Rodoviário | Rodoviário Litoral 46 | 46 | 1,2 | 2,8 | R$ 170 mil |
 
-O jogador começa com um micro-ônibus usado e R$ 15 mil em caixa.
+O jogador começa com um micro-ônibus usado e R$ 15 mil em caixa. O custo fixo segue R$ 350 por ônibus por dia.
 
-**Meta de calibração:** o segundo ônibus deve ser alcançável em 20 a 30 minutos reais de jogo. Preços e custos serão ajustados até isso acontecer. Uma simulação com os números acima mostrou que eles ainda não cumprem a meta: a linha inicial rende cerca de R$ 5,5 mil por dia, então o segundo micro-ônibus levaria 11 dias de jogo (mais de 4 horas reais em 1x). Já Blumenau ⇄ Itajaí paga um micro-ônibus em 3 dias, o que faria o dinheiro disparar. A calibração precisa baratear o começo e segurar as linhas grandes. Todo valor em dinheiro é guardado em centavos inteiros, para não acumular erro de arredondamento.
+**Meta de calibração:** o segundo ônibus deve ser alcançável em 20 a 30 minutos reais de jogo. Todo valor em dinheiro é guardado em centavos inteiros, para não acumular erro de arredondamento.
+
+**Resultado da calibração (17/11).** A simulação sem tela (`npm run calibrate`) mostrou que os números originais levavam 11.670 minutos de jogo (mais de 3 horas reais) até o segundo ônibus com sede em Ibirama. Bastou mexer nos preços dos modelos; caixa inicial, custo fixo, taxa de abertura e demanda ficaram como estavam. Com os valores acima:
+
+| Critério | Faixa | Resultado |
+| --- | --- | --- |
+| Sede Ibirama: minutos de jogo até o 2º micro | 1200 a 1800 | 1340 (22 min reais) |
+| Sede Blumenau ou Itajaí: o mesmo | 400 ou mais | 750 |
+| Lotação da linha inicial de Ibirama, dias 2 e 3 | 50% a 90% | 67% |
+| Menor tempo para um ônibus se pagar, em qualquer linha | 1,5 dia ou mais | 2,1 (micro em Blumenau ⇄ Itajaí) |
+| Convencional na melhor linha | 3 a 8 dias | 5,9 |
+| Rodoviário na melhor linha | 3 a 8 dias | 6,5 |
+| Taxa de Blumenau ⇄ Itajaí ÷ lucro diário do micro nela | 2 a 5 | 3,4 |
 
 ## Mapa
 
 O mapa mostra Santa Catarina em Leaflet, com quatro cidades e o traçado real das rodovias entre elas.
 
-| Cidade | Papel no jogo | População aprox. (mil) |
+| Cidade | Papel no jogo | População (Censo 2022) |
 | --- | --- | --- |
-| Ibirama | Cidade pequena, começo difícil | 19 |
-| Blumenau | Polo do Vale, começo fácil | 361 |
-| Itajaí | Litoral, perto de Blumenau | 264 |
-| Florianópolis | Capital, viagem longa | 537 |
+| Ibirama | Cidade pequena, começo difícil | 19.862 |
+| Blumenau | Polo do Vale, começo fácil | 361.261 |
+| Itajaí | Litoral, perto de Blumenau | 264.054 |
+| Florianópolis | Capital, viagem longa | 537.211 |
 
-As populações e distâncias deste documento são aproximadas, de memória. Na implementação, a população vem do Censo 2022 do IBGE e a distância vem do traçado gerado.
+As populações vêm do Censo 2022 do IBGE e as distâncias do traçado gerado; as fontes estão no README.
 
 - **Rodovias pré-geradas.** Um script roda uma única vez, consulta um serviço de rotas (OSRM ou OpenRouteService) para os 6 pares de cidades e salva cada traçado como arquivo no repositório, com a distância em km.
 - **Movimento do ônibus.** A posição no mapa é calculada pelo progresso da viagem ao longo do traçado salvo.
