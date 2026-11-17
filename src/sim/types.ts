@@ -32,5 +32,5 @@ export interface GameState { version: 1; company: Company; cashCents: number; cl
 export type ActionError =
   | 'saldo_insuficiente' | 'modelo_inexistente' | 'onibus_inexistente' | 'ultimo_onibus'
   | 'linha_existente' | 'linha_inexistente' | 'rota_inexistente' | 'fora_da_rede'
-  | 'onibus_ocupado' | 'nome_invalido' | 'empresa_invalida';
+  | 'onibus_ocupado' | 'nome_invalido' | 'empresa_invalida' | 'pintura_invalida';
 export type ActionResult = { ok: true; state: GameState } | { ok: false; error: ActionError };

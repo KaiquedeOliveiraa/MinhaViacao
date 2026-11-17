@@ -1,0 +1,160 @@
+import { MAX_NAME_LENGTH } from '../data/balance';
+import { getCity, getModel, getRoad, routeId } from './catalog';
+import { baseRefPriceCents, priceBoundsCents } from './demand';
+import { isValidLivery, newLine, validateCompanyInput } from './newGame';
+import { openFeeCents, sellValueCents, servedCities } from './selectors';
+import type {
+  ActionError, ActionResult, Bus, BusId, Catalog, CityId, Company, GameState, LiveryStyle, ModelId, RouteId,
+} from './types';
+
+const fail = (error: ActionError): ActionResult => ({ ok: false, error });
+const done = (state: GameState): ActionResult => ({ ok: true, state });
+
+/** Nome limpo, `''` quando vazio, ou `null` quando passa do limite. */
+function cleanName(name: string | undefined): string | null {
+  const trimmed = (name ?? '').trim();
+  return trimmed.length > MAX_NAME_LENGTH ? null : trimmed;
+}
+
+function busNumber(bus: Bus): string {
+  return bus.id.replace(/^bus-/, '');
+}
+
+export function buyBus(s: GameState, c: Catalog, input: { modelId: ModelId; name?: string }): ActionResult {
+  const model = getModel(c, input.modelId);
+  if (!model) return fail('modelo_inexistente');
+  const name = cleanName(input.name);
+  if (name === null) return fail('nome_invalido');
+  if (s.cashCents < 0 || s.cashCents < model.priceCents) return fail('saldo_insuficiente');
+  const next = structuredClone(s);
+  const number = next.nextBusNumber;
+  next.buses.push({
+    id: `bus-${number}`, modelId: model.id, name: name || `${model.name} #${number}`,
+    livery: next.company.defaultLivery, lineId: null, trip: { phase: 'idle' },
+  });
+  next.nextBusNumber = number + 1;
+  next.cashCents -= model.priceCents;
+  return done(next);
+}
+
+export function sellBus(s: GameState, c: Catalog, busId: BusId): ActionResult {
+  const bus = s.buses.find((b) => b.id === busId);
+  if (!bus) return fail('onibus_inexistente');
+  if (s.buses.length <= 1) return fail('ultimo_onibus');
+  const next = structuredClone(s);
+  next.buses = next.buses.filter((b) => b.id !== busId);
+  next.cashCents += sellValueCents(c, bus);
+  return done(next);
+}
+
+export function renameBus(s: GameState, c: Catalog, busId: BusId, name: string): ActionResult {
+  const index = s.buses.findIndex((b) => b.id === busId);
+  if (index < 0) return fail('onibus_inexistente');
+  const clean = cleanName(name);
+  if (clean === null) return fail('nome_invalido');
+  const next = structuredClone(s);
+  const bus = next.buses[index]!;
+  bus.name = clean || `${getModel(c, bus.modelId)?.name ?? 'Ônibus'} #${busNumber(bus)}`;
+  return done(next);
+}
+
+export function setBusLivery(s: GameState, _c: Catalog, busId: BusId, livery: LiveryStyle): ActionResult {
+  const index = s.buses.findIndex((b) => b.id === busId);
+  if (index < 0) return fail('onibus_inexistente');
+  if (!isValidLivery(livery)) return fail('pintura_invalida');
+  const next = structuredClone(s);
+  next.buses[index]!.livery = livery;
+  return done(next);
+}
+
+function putOnLine(bus: Bus, lineId: RouteId): void {
+  bus.lineId = lineId;
+  bus.trip = { phase: 'waiting', at: 'a', minutesLeft: 0 };
+}
+
+function takeOffLine(bus: Bus): void {
+  bus.lineId = null;
+  bus.trip = { phase: 'idle' };
+}
+
+export function openLine(s: GameState, c: Catalog, input: { a: CityId; b: CityId; priceCents?: number; busId?: BusId }): ActionResult {
+  const { a, b } = input;
+  const road = getRoad(c, a, b);
+  if (!road || !getCity(c, a) || !getCity(c, b)) return fail('rota_inexistente');
+  const id = routeId(a, b);
+  if (s.lines.some((line) => line.id === id)) return fail('linha_existente');
+  const served = servedCities(s);
+  if (!served.includes(a) && !served.includes(b)) return fail('fora_da_rede');
+  let busIndex = -1;
+  if (input.busId !== undefined) {
+    busIndex = s.buses.findIndex((bus) => bus.id === input.busId);
+    if (busIndex < 0) return fail('onibus_inexistente');
+    if (s.buses[busIndex]!.lineId !== null) return fail('onibus_ocupado');
+  }
+  const fee = openFeeCents(c, a, b);
+  if (s.cashCents < 0 || s.cashCents < fee) return fail('saldo_insuficiente');
+  const next = structuredClone(s);
+  next.lines.push(newLine(c, a, b, clampPrice(road.distanceKm, input.priceCents, baseRefPriceCents(road.distanceKm))));
+  next.cashCents -= fee;
+  if (busIndex >= 0) putOnLine(next.buses[busIndex]!, id);
+  return done(next);
+}
+
+export function closeLine(s: GameState, _c: Catalog, lineId: RouteId): ActionResult {
+  if (!s.lines.some((line) => line.id === lineId)) return fail('linha_inexistente');
+  const next = structuredClone(s);
+  next.lines = next.lines.filter((line) => line.id !== lineId);
+  for (const bus of next.buses) if (bus.lineId === lineId) takeOffLine(bus);
+  return done(next);
+}
+
+function clampPrice(distanceKm: number, value: number | undefined, fallback: number): number {
+  if (value === undefined || !Number.isFinite(value)) return fallback;
+  const { min, max } = priceBoundsCents(distanceKm);
+  return Math.min(max, Math.max(min, Math.round(value)));
+}
+
+export function setLinePrice(s: GameState, c: Catalog, lineId: RouteId, priceCents: number): ActionResult {
+  const index = s.lines.findIndex((line) => line.id === lineId);
+  if (index < 0) return fail('linha_inexistente');
+  const line = s.lines[index]!;
+  const road = getRoad(c, line.a, line.b);
+  if (!road) return fail('rota_inexistente');
+  const next = structuredClone(s);
+  next.lines[index]!.priceCents = clampPrice(road.distanceKm, priceCents, line.priceCents);
+  return done(next);
+}
+
+export function setLinePaused(s: GameState, _c: Catalog, lineId: RouteId, paused: boolean): ActionResult {
+  const index = s.lines.findIndex((line) => line.id === lineId);
+  if (index < 0) return fail('linha_inexistente');
+  const next = structuredClone(s);
+  next.lines[index]!.paused = paused;
+  return done(next);
+}
+
+export function assignBus(s: GameState, _c: Catalog, busId: BusId, lineId: RouteId): ActionResult {
+  const index = s.buses.findIndex((bus) => bus.id === busId);
+  if (index < 0) return fail('onibus_inexistente');
+  if (!s.lines.some((line) => line.id === lineId)) return fail('linha_inexistente');
+  if (s.buses[index]!.lineId !== null) return fail('onibus_ocupado');
+  const next = structuredClone(s);
+  putOnLine(next.buses[index]!, lineId);
+  return done(next);
+}
+
+export function unassignBus(s: GameState, _c: Catalog, busId: BusId): ActionResult {
+  const index = s.buses.findIndex((bus) => bus.id === busId);
+  if (index < 0) return fail('onibus_inexistente');
+  const next = structuredClone(s);
+  takeOffLine(next.buses[index]!);
+  return done(next);
+}
+
+export function updateCompany(s: GameState, c: Catalog, patch: Omit<Company, 'hqCityId'>): ActionResult {
+  const company: Company = { ...patch, hqCityId: s.company.hqCityId };
+  if (validateCompanyInput(company, c).length > 0) return fail('empresa_invalida');
+  const next = structuredClone(s);
+  next.company = { ...structuredClone(company), name: company.name.trim() };
+  return done(next);
+}
