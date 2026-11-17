@@ -1,0 +1,20 @@
+export const AVG_SPEED_KMH = 60;
+export const LAYOVER_MINUTES = 10;
+export const MINUTES_PER_DAY = 1440;
+export const DEMAND_K = 120;               // calibrar
+export const POP_EXPONENT = 0.5;           // calibrar
+export const REF_PRICE_BASE_REAIS = 5;
+export const REF_PRICE_PER_KM_REAIS = 0.35;
+export const PRICE_ELASTICITY = 1.5;
+export const MAX_PRICE_FACTOR = 1.5;
+export const PRICE_MIN_MULT = 0.3;
+export const PRICE_MAX_MULT = 3;
+export const QUEUE_MAX_HOURS = 3;
+export const INITIAL_QUEUE_HOURS = 1;
+export const DIESEL_CENTS_PER_LITER = 600;
+export const DAILY_FIXED_CENTS_PER_BUS = 35_000;   // calibrar
+export const START_CASH_CENTS = 1_500_000;         // calibrar
+export const SELL_FRACTION = 0.5;
+export const OPEN_FEE_CENTS_PER_PASSENGER = 5_000; // calibrar
+// o ônibus inicial é o modelo mais barato do catálogo: startModel() em catalog.ts
+export const MAX_NAME_LENGTH = 30;

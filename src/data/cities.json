@@ -1,0 +1,6 @@
+[
+  { "id": "ibirama", "name": "Ibirama", "population": 19862, "lat": -27.05835, "lng": -49.51811, "difficulty": "dificil" },
+  { "id": "blumenau", "name": "Blumenau", "population": 361261, "lat": -26.89524, "lng": -49.07176, "difficulty": "facil" },
+  { "id": "itajai", "name": "Itajaí", "population": 264054, "lat": -26.91441, "lng": -48.69439, "difficulty": "facil" },
+  { "id": "florianopolis", "name": "Florianópolis", "population": 537211, "lat": -27.59716, "lng": -48.55802, "difficulty": "medio" }
+]

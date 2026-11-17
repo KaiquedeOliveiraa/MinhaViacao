@@ -1,0 +1,5 @@
+[
+  { "id": "micro", "name": "Micro Vale 24 (usado)", "shape": "micro", "seats": 24, "comfort": 0.9, "kmPerLiter": 4.5, "priceCents": 6000000 },
+  { "id": "conv", "name": "Convencional Serra 44", "shape": "conv", "seats": 44, "comfort": 1.0, "kmPerLiter": 3.2, "priceCents": 18000000 },
+  { "id": "rodo", "name": "Rodoviário Litoral 46", "shape": "rodo", "seats": 46, "comfort": 1.2, "kmPerLiter": 2.8, "priceCents": 35000000 }
+]
