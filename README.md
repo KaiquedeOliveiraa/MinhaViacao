@@ -20,6 +20,8 @@ npm run e2e        # teste de ponta a ponta (Playwright)
 
 Cada envio para a branch `main` roda os testes, compila e publica no GitHub Pages
 (Settings → Pages → Source: **GitHub Actions**).
+A publicação só roda quando a variável de repositório `DEPLOY_PAGES` vale `true`
+(Settings → Secrets and variables → Actions → Variables). Sem ela, cada envio só roda os testes e a compilação.
 
 ## Documentos
 

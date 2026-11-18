@@ -26,11 +26,14 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
-      - uses: actions/upload-pages-artifact@v3
+      - if: ${{ vars.DEPLOY_PAGES == 'true' }}
+        uses: actions/upload-pages-artifact@v3
         with:
           path: dist
 
+  # Só publica quando a variável do repositório DEPLOY_PAGES for "true" (Settings → Secrets and variables → Actions → Variables).
   deploy:
+    if: ${{ vars.DEPLOY_PAGES == 'true' }}
     needs: build
     runs-on: ubuntu-latest
     environment:

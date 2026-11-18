@@ -1,0 +1,60 @@
+:root {
+  /* cores fixas */
+  --bg: #0d0a14;
+  --surface: #18141f;
+  --surface-2: #221d2b;
+  --border: #2e2838;
+  --text: #f2eff7;
+  --text-dim: #a39db0;
+  --money-up: #10B981;   /* só para dinheiro */
+  --money-down: #EF4444; /* só para dinheiro */
+
+  /* cor da empresa (theme.ts sobrescreve) */
+  --accent: #8b7cf6;
+  --on-accent: #000000;
+  --brand-primary: #ff7a00;
+  --brand-secondary: #ffffff;
+
+  /* forma e espaço */
+  --radius: 16px;
+  --radius-lg: 24px;
+  --stripe: 6px;
+  --gutter: 16px;
+  --tap: 44px;
+
+  /* fontes */
+  --font-body: 'Inter Variable', Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Barlow Condensed', 'Arial Narrow', 'Roboto Condensed', sans-serif;
+
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-width: 360px;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+button, input, select, textarea { font: inherit; color: inherit; }
+input, select, textarea { font-size: max(16px, 1em); } /* iPhone não dá zoom ao focar */
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}
