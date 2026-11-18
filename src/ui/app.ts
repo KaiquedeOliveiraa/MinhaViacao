@@ -1,48 +1,73 @@
+import { createLoop } from '../game/loop';
+import { attachAutosave, createStore, type Store } from '../game/store';
+import { acquireTabLock } from '../game/tabLock';
+import { mountMap } from '../map/mapView';
 import { importText } from '../save/file';
-import type { ParseError } from '../save/schema';
-import type { SaveStorage } from '../save/storage';
+import { createStorage, type KeyValue, type SaveStorage } from '../save/storage';
+import { updateCompany } from '../sim/actions';
+import { createGame } from '../sim/newGame';
 import type { Catalog, GameState } from '../sim/types';
 import { renderSiteHeader } from './brand';
-import { createLoop } from '../game/loop';
-import { createStore } from '../game/store';
-import { mountMap } from '../map/mapView';
-import { createGame } from '../sim/newGame';
 import { busSvg } from './busSvg';
+import { IMPORT_ERRORS, MAX_IMPORT_BYTES, openCompanyMenu } from './companyMenu';
 import { renderCreateCompany } from './createCompany';
-import { h } from './dom';
 import { confirmDialog } from './dialog';
-import { mountPanel } from './panel';
-import { mountTopBar } from './topBar';
+import { h } from './dom';
+import { errorMessage } from './format';
 import { renderInstallCard } from './installCard';
+import { mountPanel } from './panel';
 import { renderStartScreen } from './startScreen';
 import { renderStatsBlock } from './statsBlock';
 import { applyTheme, DEFAULT_PRIMARY, DEFAULT_SECONDARY } from './theme';
+import { toast } from './toast';
+import { mountTopBar } from './topBar';
 
 export type Screen = 'start' | 'create' | 'game';
-export interface AppDeps { catalog: Catalog; storage: SaveStorage; }
+export interface BootDeps { catalog: Catalog; kv: KeyValue | null; locks?: Pick<LockManager, 'request'>; }
 
-export const MAX_IMPORT_BYTES = 2_000_000;
-const DAMAGED_NOTICE = 'Seu jogo salvo não pôde ser lido. Ele continua guardado neste navegador; você pode importar um arquivo exportado.';
-const IMPORT_ERRORS: Record<ParseError, string> = {
-  formato: 'Esse arquivo não é um jogo salvo do Minha Viação.',
-  versao_futura: 'Esse jogo foi salvo por uma versão mais nova do Minha Viação.',
-  referencia: 'Esse jogo salvo usa cidades ou ônibus que esta versão não conhece.',
-};
+const DAMAGED_NOTICE = 'Seu jogo salvo não pôde ser lido. Ele continua guardado neste navegador até você começar uma viação nova.';
+const LOCKED_MESSAGE = 'O jogo já está aberto em outra aba. Feche a outra aba e recarregue esta.';
+const SAVE_FAILED = 'Não foi possível salvar neste navegador. Exporte seu jogo pelo menu para não perder o progresso.';
 
-export function mountApp(root: HTMLElement, deps: AppDeps): { go(screen: Screen): void } {
-  const loaded = deps.storage.load(deps.catalog);
+/** Ponto de entrada: trava de aba, leitura do save e tela inicial. */
+export async function boot(root: HTMLElement, deps: BootDeps): Promise<void> {
+  if (!(await acquireTabLock(deps.locks))) {
+    applyTheme(document.documentElement, null);
+    root.replaceChildren(h('main', { class: 'locked-screen' },
+      h('section', { class: 'card card-stripe' }, h('p', { class: 'lead' }, LOCKED_MESSAGE))));
+    return;
+  }
+  startApp(root, deps.catalog, createStorage(deps.kv));
+}
+
+function startApp(root: HTMLElement, catalog: Catalog, storage: SaveStorage): void {
+  const loaded = storage.load(catalog);
   let saved: GameState | null = loaded.state;
+  let fromBackup = loaded.state !== null && loaded.source === 'backup';
   let notice: string | null = loaded.state === null && loaded.damaged ? DAMAGED_NOTICE : null;
+  let teardown: ((opts?: { save?: boolean }) => void) | null = null;
+  let saveWarned = false;
+  /** O aviso de que não dá para salvar aparece uma única vez por sessão. */
+  const warnSaveFailed = () => { if (saveWarned) return; saveWarned = true; toast(SAVE_FAILED, 'erro'); };
 
   async function importFile(file: File) {
     if (file.size > MAX_IMPORT_BYTES) { notice = 'Esse arquivo é grande demais para ser um jogo salvo.'; go('start'); return; }
     if (saved && !(await confirmDialog(`Importar vai substituir o jogo de ${saved.company.name}. Continuar?`, 'Importar'))) return;
-    const result = importText(await file.text(), deps.catalog);
+    const result = importText(await file.text(), catalog);
     if (!result.ok) { notice = IMPORT_ERRORS[result.error]; go('start'); return; }
     saved = result.state;
+    fromBackup = false;
     notice = null;
-    deps.storage.save(saved);
+    storage.save(saved);
     go('game');
+  }
+
+  /** O ônibus do cartão principal: na pintura da viação salva, ou laranja e branco. */
+  function heroBus(): SVGSVGElement {
+    const company = saved?.company;
+    return busSvg(company
+      ? { shape: 'rodo', primary: company.primaryColor, secondary: company.secondaryColor, livery: company.defaultLivery, logo: company.logo }
+      : { shape: 'rodo', primary: DEFAULT_PRIMARY, secondary: DEFAULT_SECONDARY, livery: 'diagonal', logo: { kind: 'icon', iconId: 'bus' } });
   }
 
   function renderStart(): HTMLElement {
@@ -56,62 +81,101 @@ export function mountApp(root: HTMLElement, deps: AppDeps): { go(screen: Screen)
             if (saved && !(await confirmDialog(`Isso apaga a viação ${saved.company.name}. Continuar?`, 'Apagar e começar'))) return;
             go('create');
           },
-          onContinue: () => go('game'),
+          onContinue: () => {
+            if (fromBackup) { toast('Recuperamos seu jogo da cópia de segurança.', 'info'); fromBackup = false; }
+            go('game');
+          },
           onImport: (file) => { void importFile(file); },
           art: heroBus(),
         }),
-        h('div', { class: 'start-side' }, renderStatsBlock(deps.catalog), renderInstallCard()),
+        h('div', { class: 'start-side' }, renderStatsBlock(catalog), renderInstallCard()),
       ),
     );
   }
 
-  /** O ônibus do cartão principal: na pintura da viação salva, ou laranja e branco. */
-  function heroBus(): SVGSVGElement {
-    const company = saved?.company;
-    return busSvg(company
-      ? { shape: 'rodo', primary: company.primaryColor, secondary: company.secondaryColor, livery: company.defaultLivery, logo: company.logo }
-      : { shape: 'rodo', primary: DEFAULT_PRIMARY, secondary: DEFAULT_SECONDARY, livery: 'diagonal', logo: { kind: 'icon', iconId: 'bus' } });
-  }
-
   function renderCreate(): HTMLElement {
     return renderCreateCompany({
-      catalog: deps.catalog,
+      catalog,
       mode: 'create',
       onCancel: () => go('start'),
       onSubmit: (input) => {
-        saved = createGame(deps.catalog, input);
+        saved = createGame(catalog, input);
+        fromBackup = false;
         notice = null;
-        deps.storage.save(saved);
+        if (!storage.save(saved)) warnSaveFailed();
         go('game');
       },
     });
   }
 
-  /** Tela do jogo: cria o store e o laço; devolve a função que desmonta tudo. */
-  function mountGame(state: GameState): () => void {
-    const store = createStore(deps.catalog, state);
+  /** Editar identidade: a tela de criação no modo edição, por cima do jogo (que continua rodando). */
+  function openIdentityEditor(store: Store) {
+    const company = store.getState().company;
+    const close = () => { overlay.remove(); applyTheme(document.documentElement, store.getState().company); };
+    const overlay = h('div', { class: 'identity-overlay', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Editar identidade' },
+      renderCreateCompany({
+        catalog,
+        mode: 'edit',
+        initial: company,
+        onCancel: close,
+        onSubmit: (input) => {
+          const { hqCityId: _hq, ...patch } = input;
+          const r = store.dispatch((s, c) => updateCompany(s, c, patch));
+          if (!r.ok) { toast(errorMessage(r.error), 'erro'); return; }
+          close();
+          toast('Identidade atualizada.', 'ok');
+        },
+      }),
+    );
+    document.body.appendChild(overlay);
+  }
+
+  /** Tela do jogo: cria o store, o laço e o salvamento automático; devolve a função que desmonta tudo. */
+  function mountGame(state: GameState): (opts?: { save?: boolean }) => void {
+    const store = createStore(catalog, state);
     const topSlot = h('div', { class: 'game-top' });
     const mapSlot = h('div', { class: 'game-map' });
     const panelSlot = h('aside', { class: 'game-panel' });
     root.replaceChildren(h('div', { class: 'game-screen' }, topSlot, mapSlot, panelSlot));
+
+    const detachAutosave = attachAutosave(store, storage, warnSaveFailed);
     const unmountTop = mountTopBar(topSlot, store, {
-      onMenu: async () => { if (await confirmDialog('Voltar para a tela inicial? O jogo fica salvo.', 'Voltar')) go('start'); },
+      onMenu: () => openCompanyMenu({
+        store,
+        storage,
+        onEditIdentity: () => openIdentityEditor(store),
+        onExit: () => go('start'),
+        onNewGame: () => {
+          teardown?.({ save: false });
+          teardown = null;
+          storage.clear();
+          saved = null;
+          notice = null;
+          go('start');
+        },
+      }),
     });
     const unmountMap = mountMap(mapSlot, store);
     const unmountPanel = mountPanel(panelSlot, store);
+    const offTheme = store.on('change', () => {
+      if (!document.querySelector('.identity-overlay')) applyTheme(document.documentElement, store.getState().company);
+    });
     const loop = createLoop(store);
     loop.start();
-    return () => {
+
+    return ({ save = true } = {}) => {
       loop.stop();
+      offTheme();
+      detachAutosave();
       unmountTop();
       unmountPanel();
       unmountMap();
-      saved = store.getState();
-      deps.storage.save(saved);
+      if (save) {
+        saved = store.getState();
+        storage.save(saved);
+      }
     };
   }
-
-  let teardown: (() => void) | null = null;
 
   function go(screen: Screen) {
     teardown?.();
@@ -122,13 +186,12 @@ export function mountApp(root: HTMLElement, deps: AppDeps): { go(screen: Screen)
     } else {
       root.replaceChildren(screen === 'create' ? renderCreate() : renderStart());
     }
-    window.scrollTo?.(0, 0);
+    if (window.scrollY > 0) window.scrollTo(0, 0);
   }
 
   if (import.meta.env.DEV && new URLSearchParams(window.location.search).has('galeria')) {
     void import('./gallery').then(({ renderGallery }) => root.replaceChildren(renderGallery()));
-    return { go };
+    return;
   }
   go('start');
-  return { go };
 }

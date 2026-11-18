@@ -1,4 +1,5 @@
 import { advance as advanceSim } from '../sim/tick';
+import type { SaveStorage } from '../save/storage';
 import type { ActionResult, Catalog, GameState } from '../sim/types';
 
 export type Speed = 0 | 1 | 2 | 4; // 0 = pausado
@@ -55,5 +56,35 @@ export function createStore(c: Catalog, initial: GameState, speed: Speed = 1): S
       listeners[event].add(fn);
       return () => { listeners[event].delete(fn); };
     },
+  };
+}
+
+/**
+ * Grava em 'hour', em 'change' e quando a página fica escondida (visibilitychange) ou sai (pagehide).
+ * `onFail` é chamado no máximo uma vez: o jogo segue mesmo sem conseguir salvar.
+ */
+export function attachAutosave(
+  store: Store,
+  storage: SaveStorage,
+  onFail: () => void,
+  doc: Document | undefined = typeof document !== 'undefined' ? document : undefined,
+): () => void {
+  let failed = false;
+  const save = () => {
+    if (storage.save(store.getState()) || failed) return;
+    failed = true;
+    onFail();
+  };
+  const onVisibility = () => { if (doc?.visibilityState === 'hidden') save(); };
+  const offHour = store.on('hour', save);
+  const offChange = store.on('change', save);
+  const win = doc?.defaultView ?? null;
+  doc?.addEventListener('visibilitychange', onVisibility);
+  win?.addEventListener('pagehide', save);
+  return () => {
+    offHour();
+    offChange();
+    doc?.removeEventListener('visibilitychange', onVisibility);
+    win?.removeEventListener('pagehide', save);
   };
 }

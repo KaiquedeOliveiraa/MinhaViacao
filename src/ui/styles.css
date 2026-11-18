@@ -728,3 +728,47 @@
   .panel[data-expanded='true'] .tab-page { padding: 4px 24px 32px; max-width: 1280px; width: 100%; margin: 0 auto; }
   .panel[data-expanded='true'] .card { background: var(--surface); }
 }
+
+/* ---------- menu da viação, editor de identidade e aba bloqueada ---------- */
+.menu-backdrop { align-items: stretch; justify-items: start; }
+.menu-panel {
+  width: min(400px, 100%);
+  max-height: none;
+  height: 100%;
+  align-content: start;
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  border: 1px solid var(--border);
+  border-left: 0;
+  padding: calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  animation: slide-in 180ms ease-out;
+}
+.menu-head { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.menu-title { flex: 1; min-width: 0; font-size: 24px; overflow-wrap: anywhere; }
+.menu-list { display: grid; gap: 8px; }
+.menu-item {
+  display: grid;
+  gap: 2px;
+  min-height: 56px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.menu-item:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
+.menu-item.is-danger .menu-label { color: var(--money-down); }
+.menu-label { font-weight: 700; font-size: 16px; }
+.menu-panel .install-card { margin-top: 8px; }
+@keyframes slide-in { from { transform: translateX(-24px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+.identity-overlay { position: fixed; inset: 0; z-index: 900; overflow-y: auto; background: var(--bg); }
+
+.locked-screen { min-height: 100dvh; display: grid; place-items: center; padding: 24px var(--gutter); }
+.locked-screen .card { max-width: 520px; padding-top: 30px; }
+
+@media (min-width: 900px) {
+  .menu-backdrop { padding: 0; align-items: stretch; justify-items: start; }
+  .menu-panel { border-radius: 0 var(--radius-lg) var(--radius-lg) 0; border-bottom: 1px solid var(--border); padding: 20px; }
+}

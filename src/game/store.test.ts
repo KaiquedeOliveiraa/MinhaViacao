@@ -1,8 +1,10 @@
 import { expect, test } from 'vitest';
 import { buyBus, setLinePrice } from '../sim/actions';
 import { createGame } from '../sim/newGame';
-import { testCatalog, testCompany } from '../sim/testkit';
-import { createStore } from './store';
+import { memoryKv, testCatalog, testCompany } from '../sim/testkit';
+import { createStorage, SAVE_KEY } from '../save/storage';
+
+import { attachAutosave, createStore } from './store';
 
 test('ação com erro não muda o estado nem emite change', () => {
   const store = createStore(testCatalog, createGame(testCatalog, testCompany));
@@ -33,4 +35,34 @@ test('velocidade começa em 1 e mudar emite change', () => {
   expect(store.getSpeed()).toBe(1);
   store.setSpeed(4);
   expect(store.getSpeed()).toBe(4); expect(changes).toBe(1);
+});
+
+test('salva a cada hora de jogo e a cada ação', () => {
+  const kv = memoryKv(); const store = createStore(testCatalog, createGame(testCatalog, testCompany));
+  attachAutosave(store, createStorage(kv), () => {});
+  store.advance(59); expect(kv.data.has(SAVE_KEY)).toBe(false);
+  store.advance(1);  expect(JSON.parse(kv.data.get(SAVE_KEY)!).clockMinutes).toBe(60);
+  store.dispatch((s, c) => setLinePrice(s, c, 'alfa-beta', 3000));
+  expect(JSON.parse(kv.data.get(SAVE_KEY)!).lines[0].priceCents).toBe(3000);
+});
+test('foco de revisão: armazenamento cheio avisa uma vez e o jogo segue', () => {
+  const kv = { ...memoryKv(), setItem: () => { throw new Error('cheio'); } }; let fails = 0;
+  const store = createStore(testCatalog, createGame(testCatalog, testCompany));
+  attachAutosave(store, createStorage(kv), () => fails++);
+  store.advance(60); store.advance(60); store.advance(60);
+  expect(fails).toBe(1);
+  expect(store.getState().clockMinutes).toBe(180);
+});
+test('depois de desligar, não salva mais', () => {
+  const kv = memoryKv(); const store = createStore(testCatalog, createGame(testCatalog, testCompany));
+  attachAutosave(store, createStorage(kv), () => {})();
+  store.advance(60); expect(kv.data.has(SAVE_KEY)).toBe(false);
+});
+test('grava quando a página fica escondida', () => {
+  const kv = memoryKv(); const store = createStore(testCatalog, createGame(testCatalog, testCompany));
+  let hidden = false; const listeners: Record<string, () => void> = {};
+  const doc = { get visibilityState() { return hidden ? 'hidden' : 'visible'; }, addEventListener: (t: string, f: () => void) => { listeners[t] = f; }, removeEventListener: () => {}, defaultView: null } as unknown as Document;
+  attachAutosave(store, createStorage(kv), () => {}, doc);
+  store.advance(10); hidden = true; listeners.visibilitychange!();
+  expect(JSON.parse(kv.data.get(SAVE_KEY)!).clockMinutes).toBe(10);
 });
