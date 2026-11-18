@@ -7,7 +7,7 @@ export type Difficulty = 'facil' | 'medio' | 'dificil';
 export type LiveryStyle = 'plain' | 'stripe' | 'diagonal' | 'wave';
 export type LogoIconId = 'wheel' | 'road' | 'bus' | 'pine' | 'mountain' | 'wave';
 
-export interface City { id: CityId; name: string; population: number; lat: number; lng: number; difficulty: Difficulty; }
+export interface City { id: CityId; ibge?: number; name: string; population: number; lat: number; lng: number; difficulty: Difficulty; }
 export type BusShape = 'micro' | 'conv' | 'rodo';
 export interface BusModel { id: ModelId; name: string; shape: BusShape; seats: number; comfort: number; kmPerLiter: number; priceCents: number; }
 /** coords vão da cidade `a` até a `b`, com a < b em ordem alfabética. Cada ponto é [lat, lng]. */

@@ -8,6 +8,7 @@
     "build": "tsc --noEmit && vite build",
     "test": "vitest run",
     "roads": "tsx scripts/generate-roads.ts",
+    "map": "tsx scripts/generate-map.ts",
     "calibrate": "tsx scripts/calibrate.ts",
     "e2e": "playwright test"
   },
