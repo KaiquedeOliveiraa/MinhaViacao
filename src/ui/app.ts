@@ -3,8 +3,11 @@ import type { ParseError } from '../save/schema';
 import type { SaveStorage } from '../save/storage';
 import type { Catalog, GameState } from '../sim/types';
 import { renderSiteHeader } from './brand';
+import { createGame } from '../sim/newGame';
 import { busSvg } from './busSvg';
+import { renderCreateCompany } from './createCompany';
 import { h } from './dom';
+import { formatMoney } from './format';
 import { renderInstallCard } from './installCard';
 import { renderStartScreen } from './startScreen';
 import { renderStatsBlock } from './statsBlock';
@@ -44,7 +47,10 @@ export function mountApp(root: HTMLElement, deps: AppDeps): { go(screen: Screen)
         renderStartScreen({
           savedName: saved?.company.name ?? null,
           notice,
-          onStart: () => go('create'),
+          onStart: () => {
+            if (saved && !window.confirm(`Isso apaga a viação ${saved.company.name}. Continuar?`)) return;
+            go('create');
+          },
           onContinue: () => go('game'),
           onImport: (file) => { void importFile(file); },
           art: heroBus(),
@@ -62,14 +68,28 @@ export function mountApp(root: HTMLElement, deps: AppDeps): { go(screen: Screen)
       : { shape: 'rodo', primary: DEFAULT_PRIMARY, secondary: DEFAULT_SECONDARY, livery: 'diagonal', logo: { kind: 'icon', iconId: 'bus' } });
   }
 
-  /** Provisório: as tarefas 12 a 16 substituem estas telas. */
-  function renderPlaceholder(title: string): HTMLElement {
+  function renderCreate(): HTMLElement {
+    return renderCreateCompany({
+      catalog: deps.catalog,
+      mode: 'create',
+      onCancel: () => go('start'),
+      onSubmit: (input) => {
+        saved = createGame(deps.catalog, input);
+        notice = null;
+        deps.storage.save(saved);
+        go('game');
+      },
+    });
+  }
+
+  /** Provisório: as tarefas 13 a 16 substituem esta tela. */
+  function renderGamePlaceholder(): HTMLElement {
     return h('div', { class: 'start-page' },
       renderSiteHeader(),
       h('main', { class: 'placeholder' },
         h('section', { class: 'card card-stripe' },
-          h('h2', { class: 'title' }, title),
-          h('p', { class: 'muted' }, 'Esta tela ainda está em construção.'),
+          h('h2', { class: 'title' }, saved?.company.name ?? 'Jogo'),
+          h('p', { class: 'muted' }, `Caixa: ${formatMoney(saved?.cashCents ?? 0)}`),
           h('div', { class: 'btn-stack' }, h('button', { class: 'btn btn-light', type: 'button', onClick: () => go('start') }, 'Voltar')),
         ),
       ),
@@ -77,8 +97,8 @@ export function mountApp(root: HTMLElement, deps: AppDeps): { go(screen: Screen)
   }
 
   function go(screen: Screen) {
-    applyTheme(document.documentElement, screen === 'start' ? null : saved?.company ?? null);
-    const view = screen === 'start' ? renderStart() : renderPlaceholder(screen === 'create' ? 'Criar empresa' : 'Jogo');
+    if (screen !== 'create') applyTheme(document.documentElement, screen === 'start' ? null : saved?.company ?? null);
+    const view = screen === 'start' ? renderStart() : screen === 'create' ? renderCreate() : renderGamePlaceholder();
     root.replaceChildren(view);
     window.scrollTo?.(0, 0);
   }
