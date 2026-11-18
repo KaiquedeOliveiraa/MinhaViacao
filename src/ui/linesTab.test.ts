@@ -87,3 +87,13 @@ test('o tick só atualiza números, sem recriar o cartão', () => {
   expect(el.querySelector('[data-line="alfa-beta"]')).toBe(card);
   expect(el.querySelector('[data-live="occupancy"]')!.textContent).toBe('Lotação: 90%');
 });
+test('o nome completo do ônibus fica no cartão, com o modelo em outro elemento', () => {
+  const { store, el } = setup();
+  const bus = store.getState().buses[0]!;
+  const name = 'Micro Vale 24 (usado) #1 Muito Comprido';
+  store.replace({ ...store.getState(), buses: store.getState().buses.map(b => b.id === bus.id ? { ...b, name } : b) });
+  mountLinesTab(el, store);
+  const li = el.querySelector('[data-line] .line-buses li')!;
+  expect(li.querySelector('.line-bus-name')!.textContent).toBe(name);
+  expect(li.querySelector('.line-bus-model')).not.toBeNull();
+});

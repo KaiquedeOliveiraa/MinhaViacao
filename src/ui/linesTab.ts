@@ -71,8 +71,10 @@ export function mountLinesTab(el: HTMLElement, store: Store): () => void {
     const idle = s.buses.filter((b) => b.lineId === null);
     const busList = h('ul', { class: 'line-buses' },
       ...onLine.map((bus) => h('li', null,
-        h('span', { class: 'line-bus-name' }, bus.name),
-        h('span', { class: 'muted small' }, getModel(c, bus.modelId)?.name ?? ''),
+        h('div', { class: 'line-bus-info' },
+          h('span', { class: 'line-bus-name' }, bus.name),
+          h('span', { class: 'line-bus-model muted small' }, getModel(c, bus.modelId)?.name ?? ''),
+        ),
         h('button', { type: 'button', class: 'link-btn', dataset: { removeBus: bus.id }, 'aria-label': `Retirar ${bus.name} da linha`, onClick: () => { run((st) => unassignBus(st, c, bus.id)); } }, 'Retirar'),
       )),
       onLine.length === 0 ? h('li', { class: 'muted small' }, 'Sem ônibus: a linha está parada.') : null,

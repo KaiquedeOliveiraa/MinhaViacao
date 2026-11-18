@@ -2,14 +2,16 @@ import type { Store } from '../game/store';
 import { h } from './dom';
 import { mountGarageTab } from './garageTab';
 import { mountLinesTab } from './linesTab';
+import { mountListTab } from './listTab';
 import { mountShopTab } from './shopTab';
 
-export type PanelTab = 'map' | 'lines' | 'garage' | 'shop';
+export type PanelTab = 'map' | 'lines' | 'list' | 'garage' | 'shop';
 /** `select` deixa quem está de fora (o tutorial) abrir uma aba. */
 export interface PanelHandle { unmount(): void; select(tab: PanelTab): void; }
 const TABS: { id: PanelTab; label: string }[] = [
   { id: 'map', label: 'Mapa' },
   { id: 'lines', label: 'Linhas' },
+  { id: 'list', label: 'Lista' },
   { id: 'garage', label: 'Garagem' },
   { id: 'shop', label: 'Loja' },
 ];
@@ -51,11 +53,12 @@ export function mountPanel(el: HTMLElement, store: Store, opts: { onTab?(tab: Pa
     unmountTab?.();
     unmountTab = null;
     root.dataset.activeTab = tab;
-    const expanded = tab === 'garage' || tab === 'shop';
+    const expanded = tab === 'list' || tab === 'garage' || tab === 'shop';
     if (expanded) { root.dataset.expanded = 'true'; el.dataset.expanded = 'true'; }
     else { delete root.dataset.expanded; delete el.dataset.expanded; }
     for (const btn of buttons) btn.setAttribute('aria-selected', String(btn.dataset.tab === tab));
     if (tab === 'lines') unmountTab = mountLinesTab(content, store);
+    else if (tab === 'list') unmountTab = mountExpanded(content, (slot) => mountListTab(slot, store), () => select('lines'));
     else if (tab === 'garage') unmountTab = mountExpanded(content, (slot) => mountGarageTab(slot, store), () => select('lines'));
     else if (tab === 'shop') unmountTab = mountExpanded(content, (slot) => mountShopTab(slot, store), () => select('lines'));
     else content.replaceChildren();

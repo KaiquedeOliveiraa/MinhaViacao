@@ -61,6 +61,10 @@ test('criar uma viação, seguir o tutorial, ganhar dinheiro e continuar depois 
   await expect(page.locator('[data-line]')).toHaveCount(1);
   await expect(page.locator('[data-line] .line-buses li')).toHaveCount(1);
   await expectNoHorizontalScroll(page, 'linhas');
+  await page.locator('[data-tab="list"]').click();
+  await expect(page.locator('.list-table tbody tr')).toHaveCount(1);
+  await expectNoHorizontalScroll(page, 'lista');
+  await page.locator('[data-tab="lines"]').click();
   const startCash = await cash.textContent();
 
   await page.locator('[data-speed="4"]').click();
