@@ -4,7 +4,8 @@ import { testCatalog, testCompany } from './testkit';
 
 test('jogo novo começa com caixa, um ônibus e a linha até a cidade mais próxima', () => {
   const s = createGame(testCatalog, testCompany);
-  expect(s.version).toBe(1);
+  expect(s.version).toBe(2);
+  expect(s.tutorial).toBe('fim');
   expect(s.cashCents).toBe(1_500_000);
   expect(s.clockMinutes).toBe(0);
   expect(s.buses).toHaveLength(1);

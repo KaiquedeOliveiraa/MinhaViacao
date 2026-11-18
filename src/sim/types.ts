@@ -21,13 +21,15 @@ export type Trip =
   | { phase: 'idle' }
   | { phase: 'waiting'; at: End; minutesLeft: number }
   | { phase: 'moving'; from: End; progress: number; passengers: number; fareCents: number };
-export interface Bus { id: BusId; modelId: ModelId; name: string; livery: LiveryStyle; lineId: RouteId | null; trip: Trip; }
+export type DriverId = string;
+export interface Bus { id: BusId; modelId: ModelId; name: string; livery: LiveryStyle; lineId: RouteId | null; trip: Trip; driverId: DriverId | null; }
 
 export interface DayStats { revenueCents: number; dieselCents: number; passengers: number; seatsOffered: number; }
 /** `a` e `b` ficam na ordem em que o jogador escolheu; `id` é sempre o RouteId ordenado. */
 export interface Line { id: RouteId; a: CityId; b: CityId; priceCents: number; paused: boolean; queueA: number; queueB: number; lastDepartA: number | null; lastDepartB: number | null; today: DayStats; yesterday: DayStats; }
 
-export interface GameState { version: 1; company: Company; cashCents: number; clockMinutes: number; buses: Bus[]; lines: Line[]; nextBusNumber: number; }
+export type TutorialStep = 'comprar' | 'pintar' | 'linha' | 'fim';
+export interface GameState { version: 2; company: Company; cashCents: number; clockMinutes: number; buses: Bus[]; lines: Line[]; nextBusNumber: number; tutorial: TutorialStep; }
 
 export type ActionError =
   | 'saldo_insuficiente' | 'modelo_inexistente' | 'onibus_inexistente' | 'ultimo_onibus'

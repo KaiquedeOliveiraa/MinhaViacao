@@ -2,11 +2,11 @@ import { MAX_NAME_LENGTH } from '../data/balance';
 import { getCity, getModel, getRoad, routeId } from '../sim/catalog';
 import { isValidLivery, validateCompanyInput } from '../sim/newGame';
 import type {
-  Bus, Catalog, Company, DayStats, End, GameState, Line, LiveryStyle, LogoIconId, LogoRef, Trip,
+  Bus, Catalog, Company, DayStats, End, GameState, Line, LiveryStyle, LogoIconId, LogoRef, Trip, TutorialStep,
 } from '../sim/types';
 import { migrate } from './migrate';
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 export const MAX_BUSES = 500;
 export type ParseError = 'formato' | 'versao_futura' | 'referencia';
 export type ParseResult = { ok: true; state: GameState } | { ok: false; error: ParseError };
@@ -111,8 +111,13 @@ function readBus(v: unknown, c: Catalog, lineIds: Set<string>): Bus {
   if (lineId !== null && !lineIds.has(lineId)) bad();
   const trip = readTrip(o.trip, model.seats);
   if ((trip.phase === 'idle') !== (lineId === null)) bad();
-  return { id, modelId, name, livery: livery as LiveryStyle, lineId, trip };
+  const driverId = o.driverId === null ? null : str(o.driverId);
+  if (driverId !== null && (driverId.length === 0 || driverId.length > 40)) bad();
+  return { id, modelId, name, livery: livery as LiveryStyle, lineId, trip, driverId };
 }
+
+const TUTORIAL_STEPS: readonly TutorialStep[] = ['comprar', 'pintar', 'linha', 'fim'];
+const tutorialStep = (v: unknown): TutorialStep => (TUTORIAL_STEPS.includes(v as TutorialStep) ? (v as TutorialStep) : bad());
 
 function readState(raw: unknown, c: Catalog): GameState {
   const top = obj(raw);
@@ -138,6 +143,7 @@ function readState(raw: unknown, c: Catalog): GameState {
     buses,
     lines,
     nextBusNumber: int(o.nextBusNumber, 1),
+    tutorial: tutorialStep(o.tutorial),
   };
 }
 

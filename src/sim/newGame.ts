@@ -77,15 +77,16 @@ export function createGame(c: Catalog, input: CompanyInput): GameState {
   const road = getRoad(c, hq, other)!;
   const line = newLine(c, hq, other, refPriceCents(road.distanceKm, model.comfort));
   return {
-    version: 1,
+    version: 2,
     company,
     cashCents: START_CASH_CENTS,
     clockMinutes: 0,
     buses: [{
       id: 'bus-1', modelId: model.id, name: `${model.name} #1`, livery: company.defaultLivery,
-      lineId: line.id, trip: { phase: 'waiting', at: 'a', minutesLeft: 0 },
+      lineId: line.id, trip: { phase: 'waiting', at: 'a', minutesLeft: 0 }, driverId: null,
     }],
     lines: [line],
     nextBusNumber: 2,
+    tutorial: 'fim',
   };
 }

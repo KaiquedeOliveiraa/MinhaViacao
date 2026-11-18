@@ -6,7 +6,7 @@ import type { Bus, Road, Trip } from './types';
 
 const road: Road = { id: 'beta-gama', a: 'beta', b: 'gama', distanceKm: 30, coords: [[0, 0], [0, 1], [0, 3]] };
 const line = (a: string, b: string) => ({ ...newLine(testCatalog, a, b, 1550) });
-const bus = (trip: Trip): Bus => ({ id: 'bus-1', modelId: 'mini', name: 'x', livery: 'plain', lineId: 'beta-gama', trip });
+const bus = (trip: Trip): Bus => ({ id: 'bus-1', modelId: 'mini', name: 'x', livery: 'plain', lineId: 'beta-gama', trip, driverId: null });
 
 test('ponto ao longo do traçado é proporcional à distância, não ao número de pontos', () => {
   const index = buildRoadIndex(road);

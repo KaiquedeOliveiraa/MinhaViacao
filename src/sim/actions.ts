@@ -30,7 +30,7 @@ export function buyBus(s: GameState, c: Catalog, input: { modelId: ModelId; name
   const number = next.nextBusNumber;
   next.buses.push({
     id: `bus-${number}`, modelId: model.id, name: name || `${model.name} #${number}`,
-    livery: next.company.defaultLivery, lineId: null, trip: { phase: 'idle' },
+    livery: next.company.defaultLivery, lineId: null, trip: { phase: 'idle' }, driverId: null,
   });
   next.nextBusNumber = number + 1;
   next.cashCents -= model.priceCents;

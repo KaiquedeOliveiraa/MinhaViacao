@@ -43,7 +43,7 @@ for (const city of c.cities) {
 function soloState(road: Road, model: BusModel): GameState {
   const s = createGame(c, { ...testCompany, hqCityId: road.a });
   s.lines = [newLine(c, road.a, road.b, refPriceCents(road.distanceKm, model.comfort))];
-  s.buses = [{ id: 'bus-1', modelId: model.id, name: 'x', livery: 'plain', lineId: road.id, trip: { phase: 'waiting', at: 'a', minutesLeft: 0 } }];
+  s.buses = [{ id: 'bus-1', modelId: model.id, name: 'x', livery: 'plain', lineId: road.id, trip: { phase: 'waiting', at: 'a', minutesLeft: 0 }, driverId: null }];
   return s;
 }
 function dailyProfit(road: Road, model: BusModel): { profit: number; occupancy: number | null } {
