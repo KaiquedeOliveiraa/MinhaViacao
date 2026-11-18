@@ -48,7 +48,8 @@ async function waitForServer(): Promise<void> {
 }
 
 async function main() {
-  const server = spawn(`npx vite preview --port ${PORT} --strictPort`, { shell: true, stdio: 'ignore' });
+  // node direto (sem shell): assim server.kill() derruba o próprio vite e nada fica ouvindo na porta
+  const server = spawn(process.execPath, ['node_modules/vite/bin/vite.js', 'preview', '--port', String(PORT), '--strictPort'], { stdio: 'ignore' });
   try {
     await waitForServer();
     const browser = await chromium.launch(process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {});
@@ -121,7 +122,6 @@ async function main() {
     await browser.close();
   } finally {
     server.kill();
-    if (process.platform === 'win32' && server.pid) spawn('taskkill', ['/pid', String(server.pid), '/T', '/F'], { stdio: 'ignore' });
   }
 }
 
