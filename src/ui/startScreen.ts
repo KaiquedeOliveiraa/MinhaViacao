@@ -6,6 +6,8 @@ export interface StartProps {
   onStart(): void;
   onContinue(): void;
   onImport(file: File): void;
+  /** Ilustração do cartão principal (o ônibus na pintura da viação). */
+  art?: Node | null;
 }
 
 /** Cartão principal da tela de entrada: rótulo, título, frase e os botões. */
@@ -35,7 +37,7 @@ export function renderStartScreen(p: StartProps): HTMLElement {
     h('p', { class: 'chip' }, h('span', { class: 'chip-dot', 'aria-hidden': 'true' }), 'Santa Catarina · rodovias reais'),
     h('h1', { class: 'display', id: 'start-title' }, 'Monte a sua ', h('span', { class: 'accent-text' }, 'viação')),
     h('p', { class: 'lead' }, 'Monte sua viação e conquiste as estradas, começando por Santa Catarina.'),
-    h('div', { class: 'hero-art', dataset: { slot: 'bus' } }),
+    h('div', { class: 'hero-art', dataset: { slot: 'bus' } }, p.art ?? null),
     p.notice ? h('p', { class: 'notice', role: 'alert' }, p.notice) : null,
     h('div', { class: 'btn-stack' }, ...buttons),
     fileInput,

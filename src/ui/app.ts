@@ -3,11 +3,12 @@ import type { ParseError } from '../save/schema';
 import type { SaveStorage } from '../save/storage';
 import type { Catalog, GameState } from '../sim/types';
 import { renderSiteHeader } from './brand';
+import { busSvg } from './busSvg';
 import { h } from './dom';
 import { renderInstallCard } from './installCard';
 import { renderStartScreen } from './startScreen';
 import { renderStatsBlock } from './statsBlock';
-import { applyTheme } from './theme';
+import { applyTheme, DEFAULT_PRIMARY, DEFAULT_SECONDARY } from './theme';
 
 export type Screen = 'start' | 'create' | 'game';
 export interface AppDeps { catalog: Catalog; storage: SaveStorage; }
@@ -46,10 +47,19 @@ export function mountApp(root: HTMLElement, deps: AppDeps): { go(screen: Screen)
           onStart: () => go('create'),
           onContinue: () => go('game'),
           onImport: (file) => { void importFile(file); },
+          art: heroBus(),
         }),
         h('div', { class: 'start-side' }, renderStatsBlock(deps.catalog), renderInstallCard()),
       ),
     );
+  }
+
+  /** O ônibus do cartão principal: na pintura da viação salva, ou laranja e branco. */
+  function heroBus(): SVGSVGElement {
+    const company = saved?.company;
+    return busSvg(company
+      ? { shape: 'rodo', primary: company.primaryColor, secondary: company.secondaryColor, livery: company.defaultLivery, logo: company.logo }
+      : { shape: 'rodo', primary: DEFAULT_PRIMARY, secondary: DEFAULT_SECONDARY, livery: 'diagonal', logo: { kind: 'icon', iconId: 'bus' } });
   }
 
   /** Provisório: as tarefas 12 a 16 substituem estas telas. */
@@ -73,6 +83,10 @@ export function mountApp(root: HTMLElement, deps: AppDeps): { go(screen: Screen)
     window.scrollTo?.(0, 0);
   }
 
+  if (import.meta.env.DEV && new URLSearchParams(window.location.search).has('galeria')) {
+    void import('./gallery').then(({ renderGallery }) => root.replaceChildren(renderGallery()));
+    return { go };
+  }
   go('start');
   return { go };
 }

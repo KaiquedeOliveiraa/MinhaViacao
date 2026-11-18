@@ -226,3 +226,32 @@
   .lead { font-size: 20px; max-width: 34ch; }
   .btn-stack { max-width: 420px; }
 }
+
+/* ---------- ônibus e logos ---------- */
+.bus-svg { display: block; width: 100%; height: auto; overflow: visible; }
+.hero-art { margin: -4px -8px 0; }
+.hero-art .bus-svg { max-width: 560px; margin-left: auto; filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.35)); }
+.logo-view {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  border-radius: 28%;
+  overflow: hidden;
+}
+.logo-view-image { background: var(--surface-2); }
+.logo-view-image img { width: 100%; height: 100%; object-fit: contain; }
+.livery-thumb { display: block; width: 64px; height: 40px; }
+
+/* grades de cartões: 1 coluna abaixo de 600 px, 2 até 900, 3 no desktop */
+.card-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+@media (min-width: 600px) { .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 900px) { .card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; } }
+
+/* galeria (só em desenvolvimento) */
+.gallery { width: 100%; max-width: 1180px; margin: 0 auto; padding: 24px var(--gutter) 48px; display: grid; gap: 28px; }
+.gallery-section { display: grid; gap: 14px; }
+.gallery-item { margin: 0; display: grid; gap: 6px; padding: 14px; }
+.gallery-item figcaption { font-size: 13px; }
+.gallery-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.gallery-thumb { padding: 6px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); }
+.gallery-logo { display: grid; justify-items: center; gap: 6px; font-size: 12px; width: 84px; text-align: center; }
