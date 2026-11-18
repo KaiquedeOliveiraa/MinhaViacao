@@ -197,7 +197,7 @@ function startApp(root: HTMLElement, catalog: Catalog, storage: SaveStorage): vo
     if (window.scrollY > 0) window.scrollTo(0, 0);
   }
 
-  if (import.meta.env.DEV && new URLSearchParams(window.location.search).has('galeria')) {
+  if (new URLSearchParams(window.location.search).has('galeria')) {
     void import('./gallery').then(({ renderGallery }) => root.replaceChildren(renderGallery()));
     return;
   }

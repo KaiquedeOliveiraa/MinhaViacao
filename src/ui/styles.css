@@ -247,9 +247,10 @@
 @media (min-width: 600px) { .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 900px) { .card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; } }
 
-/* galeria (só em desenvolvimento) */
+/* galeria de conferência (/?galeria) */
 .gallery { width: 100%; max-width: 1180px; margin: 0 auto; padding: 24px var(--gutter) 48px; display: grid; gap: 28px; }
 .gallery-section { display: grid; gap: 14px; }
+@media (min-width: 1100px) { .gallery .card-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .gallery-item { margin: 0; display: grid; gap: 6px; padding: 14px; }
 .gallery-item figcaption { font-size: 13px; }
 .gallery-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
