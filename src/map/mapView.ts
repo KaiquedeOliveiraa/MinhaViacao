@@ -16,7 +16,7 @@ import { formatPeople } from '../ui/format';
  */
 const BASEMAP = {
   url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-  attribution: 'Tiles © <a href="https://www.esri.com/">Esri</a> — Esri, HERE, Garmin, © OpenStreetMap contributors',
+  attribution: 'Sources: <a href="https://www.esri.com/">Esri</a>, HERE, Garmin, © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, and the GIS user community',
   maxNativeZoom: 16,
 };
 const POPUP_MAX_WIDTH = 260;

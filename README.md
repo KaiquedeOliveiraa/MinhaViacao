@@ -2,6 +2,13 @@
 
 Jogo de navegador, para um jogador, em que você cria uma empresa de ônibus em Santa Catarina — nome, logo e pintura — e a faz crescer operando linhas entre cidades reais em um mapa real.
 
+- Crie a viação: nome, cidade-sede (que define a dificuldade), duas cores, logo (ícone pronto ou imagem sua) e estilo de pintura.
+- O jogo começa com uma linha da sede até a cidade mais próxima e um micro-ônibus usado rodando nela.
+- Ajuste o preço da passagem, compre ônibus, abra novas linhas a partir da sua rede e pinte cada ônibus do seu jeito.
+- Funciona no celular (a partir de 360 px) e no computador, e pode ser instalado na tela inicial do celular.
+
+> **O jogo salvo fica só neste navegador.** Limpar os dados do navegador apaga o jogo. Use **Menu → Exportar jogo salvo** para guardar uma cópia e **Importar jogo salvo** para trazê-la de volta. No iPhone, o aplicativo instalado guarda o jogo separado do Safari: exporte antes e importe no aplicativo.
+
 ## Rodar localmente
 
 Requer Node 22 ou mais novo.
@@ -10,25 +17,32 @@ Requer Node 22 ou mais novo.
 npm install
 npm run dev        # servidor de desenvolvimento em http://localhost:5173
 npm test           # testes (Vitest)
-npm run build      # compila para dist/
-npm run roads      # gera src/data/roads.json (rodar só quando mudar cidades)
-npm run calibrate  # simulação sem tela com a tabela de equilíbrio
-npm run e2e        # teste de ponta a ponta (Playwright)
+npm run build      # verificação de tipos e compilação para dist/
+npm run e2e        # teste de ponta a ponta (Playwright, desktop e iPhone 13)
 ```
+
+O `npm run e2e` usa o Chromium do Playwright (`npx playwright install chromium` na primeira vez). Para usar um navegador já instalado, defina `PW_CHANNEL`, por exemplo `PW_CHANNEL=msedge npm run e2e`.
+
+Em desenvolvimento, `http://localhost:5173/?galeria` mostra a galeria de conferência dos desenhos (3 modelos × 4 pinturas em duas combinações de cor, e os 6 ícones de logo).
+
+### Regerar rodovias e recalibrar
+
+- `npm run roads`: consulta o OSRM uma vez para cada par de cidades de `src/data/cities.json` e grava `src/data/roads.json` (rodar só quando mudar ou acrescentar cidades).
+- `npm run calibrate`: roda a simulação sem tela com as regras reais e imprime a tabela de equilíbrio e os seis critérios (`OK`/`FORA`). Todo número de equilíbrio fica em `src/data/balance.ts` e nos preços de `src/data/models.json`.
 
 ## Publicação
 
-Cada envio para a branch `main` roda os testes, compila e publica no GitHub Pages
-(Settings → Pages → Source: **GitHub Actions**).
-A publicação só roda quando a variável de repositório `DEPLOY_PAGES` vale `true`
-(Settings → Secrets and variables → Actions → Variables). Sem ela, cada envio só roda os testes e a compilação.
+Cada envio para a branch `main` roda os testes, o teste de ponta a ponta e a compilação no GitHub Actions.
+A publicação no GitHub Pages só acontece quando a variável de repositório `DEPLOY_PAGES` vale `true`
+(Settings → Secrets and variables → Actions → Variables) e o Pages está com Source: **GitHub Actions**.
+O site usa caminhos relativos (`base: './'`), então funciona em `https://<usuario>.github.io/MinhaViacao/` sem configuração extra.
 
 ## Documentos
 
 - Design: [docs/superpowers/specs/2026-11-12-minha-viacao-mvp-design.md](docs/superpowers/specs/2026-11-12-minha-viacao-mvp-design.md)
 - Plano: [docs/superpowers/plans/2026-11-13-minha-viacao-mvp.md](docs/superpowers/plans/2026-11-13-minha-viacao-mvp.md)
 
-## Fontes dos dados
+## Fontes dos dados e atribuições
 
 **População:** Censo 2022, IBGE (agregado 4714, variável 93), consultado em 17/11/2026.
 
@@ -48,4 +62,10 @@ A publicação só roda quando a variável de repositório `DEPLOY_PAGES` vale `
 | Itajaí | Rodoviária Internacional de Itajaí | way/196969046 |
 | Florianópolis | Terminal Rodoviário Rita Maria | way/35165963 |
 
-**Rodovias:** traçados gerados com o serviço público do OSRM (`npm run roads`), sobre dados do OpenStreetMap.
+**Rodovias:** traçados gerados com o serviço público do [OSRM](https://project-osrm.org/) (`npm run roads`), sobre dados © colaboradores do OpenStreetMap.
+
+**Mapa-base:** Esri World Dark Gray Base — "Sources: Esri, HERE, Garmin, © OpenStreetMap contributors, and the GIS user community". A atribuição aparece no canto do mapa. A CARTO, escolha original do plano, passou a exigir chave de API em 2026. **Antes de publicar, confirmar nos termos de uso da Esri que um jogo gratuito e público pode usar esses tiles**; se não puder, trocar o objeto `BASEMAP` em `src/map/mapView.ts` (por exemplo, Stadia Maps, que pede cadastro do domínio).
+
+**Mapa interativo:** [Leaflet](https://leafletjs.com/) (BSD-2). **Fontes:** Inter e Barlow Condensed (SIL Open Font License), via Fontsource.
+
+Os modelos de ônibus têm nomes inventados; o jogo não usa marcas reais de fabricantes nem de empresas de ônibus.

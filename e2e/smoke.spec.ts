@@ -1,0 +1,48 @@
+import { expect, test, type Page } from '@playwright/test';
+
+/** Nenhuma tela pode ter rolagem horizontal (360 px para cima). */
+async function expectNoHorizontalScroll(page: Page, where: string) {
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  expect(overflow, `rolagem horizontal em: ${where}`).toBeLessThanOrEqual(0);
+}
+
+test('criar uma viação, ganhar dinheiro e continuar depois de recarregar', async ({ page, isMobile }) => {
+  const errors: string[] = [];
+  page.on('pageerror', e => errors.push(e.message));
+
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: /^Continuar/ })).toHaveCount(0);
+  await expectNoHorizontalScroll(page, 'tela inicial');
+  await page.getByRole('button', { name: 'Começar uma viação' }).click();
+
+  await page.locator('[name="name"]').fill('Expresso Teste');
+  await page.locator('[data-city="ibirama"]').click();
+  await page.locator('[data-livery="wave"]').click();
+  await expectNoHorizontalScroll(page, 'criação');
+  await page.locator('[data-action="submit"]').click();
+
+  const cash = page.locator('[data-live="cash"]');
+  await expect(page.locator('.top-name')).toHaveText('Expresso Teste');
+  await expect(page.locator('.leaflet-container')).toBeVisible();
+  await expectNoHorizontalScroll(page, 'mapa');
+  if (isMobile) await page.locator('[data-tab="lines"]').click(); // no celular a aba Linhas abre pela barra do rodapé
+  await expect(page.locator('[data-line]')).toHaveCount(1);
+  await expectNoHorizontalScroll(page, 'linhas');
+  const startCash = await cash.textContent();
+
+  await page.locator('[data-speed="4"]').click();
+  await expect(cash).not.toHaveText(startCash!, { timeout: 90_000 }); // a primeira viagem chega
+
+  await page.locator('[data-tab="garage"]').click();
+  await expect(page.locator('[data-bus] .bus-card-art svg')).toHaveCount(1);
+  await expectNoHorizontalScroll(page, 'garagem');
+  await page.locator('[data-tab="shop"]').click();
+  await expect(page.locator('[data-model]')).toHaveCount(3);
+  await expectNoHorizontalScroll(page, 'loja');
+  if (isMobile) await page.locator('[data-tab="map"]').click();
+
+  await page.reload();
+  await page.getByRole('button', { name: 'Continuar: Expresso Teste' }).click();
+  await expect(page.locator('[data-live="clock"]')).not.toHaveText('Dia 1 · 00:00');
+  expect(errors).toEqual([]);
+});

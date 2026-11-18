@@ -320,13 +320,26 @@ Estes sistemas ficam para depois, um de cada vez, nesta ordem proposta:
 
 **Depende do Kaique**
 
-- [ ] Aprovar este documento.
-- [ ] Escolher o visual da interface a partir de mockups, antes de construir as telas.
-- [ ] Nome final definido em 14/11: Minha Viação.
+- [x] Aprovar este documento.
+- [x] Escolher o visual da interface a partir de mockups, antes de construir as telas. Tela inicial aprovada em 17/11 com a paleta preto e roxo `#8b7cf6`, provisória.
+- [x] Nome final definido em 14/11: Minha Viação.
+- [ ] Aprovar o desenho dos ônibus (galeria em `/?galeria`, só em desenvolvimento).
+- [ ] Confirmar os termos de uso do mapa-base antes de publicar (ver abaixo).
+- [ ] Trocar a paleta definitiva (todas as cores da interface estão em `src/ui/tokens.css`).
+- [ ] Rever o equilíbrio: o micro-ônibus é o melhor investimento em todas as linhas (se paga em 2,1 dias, contra 5,9 do convencional e 6,5 do rodoviário).
 
-**Fica a cargo de quem implementa**
+**Fica a cargo de quem implementa** (resolvido na implementação, 17/11)
 
-- Os desenhos vetoriais dos três ônibus, dos 4 estilos de pintura e dos 6 ícones de logo.
-- A escolha do provedor do mapa-base escuro e do serviço de rotas usado pelo script.
-- A organização interna de cada pasta e os nomes de arquivos e funções.
-- A calibração dos números de demanda, preço e custo, guiada pela meta de 20 a 30 minutos até o segundo ônibus.
+- [x] Os desenhos vetoriais dos três ônibus, dos 4 estilos de pintura e dos 6 ícones de logo (`src/ui/busSvg.ts`, `src/data/logos.ts`).
+- [x] O serviço de rotas: OSRM público, consultado uma vez pelo script `npm run roads`.
+- [x] O mapa-base: a CARTO (escolha inicial) passou a exigir chave de API; o jogo usa a Esri World Dark Gray Base, que responde sem chave. Os termos de uso para um jogo público ainda precisam ser confirmados.
+- [x] A organização interna das pastas segue o plano de implementação.
+- [x] A calibração: só os preços dos modelos mudaram (micro R$ 20 mil, convencional R$ 120 mil, rodoviário R$ 170 mil); o segundo ônibus chega em cerca de 22 minutos reais com sede em Ibirama.
+
+**O que mudou durante a implementação**
+
+- O CI usa Node 22, porque o Vitest atual não roda no Node 20.
+- A publicação no GitHub Pages fica desligada até a variável de repositório `DEPLOY_PAGES` valer `true`; cada envio roda testes, o teste de ponta a ponta (desktop e iPhone 13) e a compilação.
+- Ao sair da tela do jogo, o jogo é gravado; além disso grava a cada hora de jogo, a cada ação e quando a aba é escondida ou fechada.
+- O aviso de que não dá para salvar aparece uma única vez por sessão.
+- O menu da viação traz também o cartão "Jogue como aplicativo", com o aviso sobre o iPhone.
