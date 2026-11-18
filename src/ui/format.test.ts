@@ -7,6 +7,10 @@ test('dinheiro', () => {
   expect(formatMoney(-120_000)).toBe('-R$ 1.200');
   expect(formatMoney(2655, { cents: true })).toBe('R$ 26,55');
 });
+test('valor negativo que arredonda para zero não mostra sinal', () => {
+  expect(formatMoney(-40)).toBe('R$ 0');
+  expect(formatMoney(-50)).toBe('-R$ 1');
+});
 test('relógio', () => {
   expect(formatClock(0)).toBe('Dia 1 · 00:00');
   expect(formatClock(3740)).toBe('Dia 3 · 14:20');

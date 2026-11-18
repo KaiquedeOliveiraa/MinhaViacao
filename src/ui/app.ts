@@ -10,7 +10,9 @@ import { createGame } from '../sim/newGame';
 import { busSvg } from './busSvg';
 import { renderCreateCompany } from './createCompany';
 import { h } from './dom';
-import { formatMoney } from './format';
+import { confirmDialog } from './dialog';
+import { mountPanel } from './panel';
+import { mountTopBar } from './topBar';
 import { renderInstallCard } from './installCard';
 import { renderStartScreen } from './startScreen';
 import { renderStatsBlock } from './statsBlock';
@@ -34,7 +36,7 @@ export function mountApp(root: HTMLElement, deps: AppDeps): { go(screen: Screen)
 
   async function importFile(file: File) {
     if (file.size > MAX_IMPORT_BYTES) { notice = 'Esse arquivo é grande demais para ser um jogo salvo.'; go('start'); return; }
-    if (saved && !window.confirm(`Importar vai substituir o jogo de ${saved.company.name}. Continuar?`)) return;
+    if (saved && !(await confirmDialog(`Importar vai substituir o jogo de ${saved.company.name}. Continuar?`, 'Importar'))) return;
     const result = importText(await file.text(), deps.catalog);
     if (!result.ok) { notice = IMPORT_ERRORS[result.error]; go('start'); return; }
     saved = result.state;
@@ -50,8 +52,8 @@ export function mountApp(root: HTMLElement, deps: AppDeps): { go(screen: Screen)
         renderStartScreen({
           savedName: saved?.company.name ?? null,
           notice,
-          onStart: () => {
-            if (saved && !window.confirm(`Isso apaga a viação ${saved.company.name}. Continuar?`)) return;
+          onStart: async () => {
+            if (saved && !(await confirmDialog(`Isso apaga a viação ${saved.company.name}. Continuar?`, 'Apagar e começar'))) return;
             go('create');
           },
           onContinue: () => go('game'),
@@ -88,33 +90,21 @@ export function mountApp(root: HTMLElement, deps: AppDeps): { go(screen: Screen)
   /** Tela do jogo: cria o store e o laço; devolve a função que desmonta tudo. */
   function mountGame(state: GameState): () => void {
     const store = createStore(deps.catalog, state);
-    const cash = h('span', { class: 'cash', dataset: { live: 'cash' } });
-    const updateCash = () => {
-      const cents = store.getState().cashCents;
-      cash.textContent = formatMoney(cents);
-      cash.classList.toggle('is-negative', cents < 0);
-    };
+    const topSlot = h('div', { class: 'game-top' });
     const mapSlot = h('div', { class: 'game-map' });
-    const view = h('div', { class: 'game-screen' },
-      h('header', { class: 'game-top' },
-        h('button', { type: 'button', class: 'btn btn-ghost btn-compact', onClick: () => go('start') }, 'Sair'),
-        h('span', { class: 'game-name' }, store.getState().company.name),
-        cash,
-      ),
-      mapSlot,
-      h('aside', { class: 'game-panel' }),
-    );
-    root.replaceChildren(view);
-    updateCash();
-    const offTick = store.on('tick', updateCash);
-    const offChange = store.on('change', updateCash);
+    const panelSlot = h('aside', { class: 'game-panel' });
+    root.replaceChildren(h('div', { class: 'game-screen' }, topSlot, mapSlot, panelSlot));
+    const unmountTop = mountTopBar(topSlot, store, {
+      onMenu: async () => { if (await confirmDialog('Voltar para a tela inicial? O jogo fica salvo.', 'Voltar')) go('start'); },
+    });
     const unmountMap = mountMap(mapSlot, store);
+    const unmountPanel = mountPanel(panelSlot, store);
     const loop = createLoop(store);
     loop.start();
     return () => {
       loop.stop();
-      offTick();
-      offChange();
+      unmountTop();
+      unmountPanel();
       unmountMap();
       saved = store.getState();
       deps.storage.save(saved);

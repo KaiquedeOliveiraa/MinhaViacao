@@ -8,13 +8,14 @@ function thousands(n: number): string {
 /** 'R$ 12.480'; com `cents`, 'R$ 26,55'. Negativo vira '-R$ 1.200'. */
 export function formatMoney(cents: number, opts: { cents?: boolean } = {}): string {
   const value = Number.isFinite(cents) ? Math.round(cents) : 0;
-  const sign = value < 0 ? '-' : '';
   const abs = Math.abs(value);
   if (opts.cents) {
-    const reais = Math.floor(abs / 100);
-    return `${sign}R$ ${thousands(reais)},${String(abs % 100).padStart(2, '0')}`;
+    const sign = value < 0 ? '-' : '';
+    return `${sign}R$ ${thousands(Math.floor(abs / 100))},${String(abs % 100).padStart(2, '0')}`;
   }
-  return `${sign}R$ ${thousands(Math.round(abs / 100))}`;
+  const reais = Math.round(abs / 100);
+  const sign = value < 0 && reais > 0 ? '-' : ''; // -R$ 0 não existe
+  return `${sign}R$ ${thousands(reais)}`;
 }
 
 /** 'Dia 3 · 14:20' */
