@@ -1,6 +1,8 @@
 import type { Store } from '../game/store';
 import { h } from './dom';
+import { mountGarageTab } from './garageTab';
 import { mountLinesTab } from './linesTab';
+import { mountShopTab } from './shopTab';
 
 export type PanelTab = 'map' | 'lines' | 'garage' | 'shop';
 const TABS: { id: PanelTab; label: string }[] = [
@@ -14,9 +16,15 @@ function mobileQuery(): MediaQueryList | null {
   return typeof window !== 'undefined' && typeof window.matchMedia === 'function' ? window.matchMedia('(max-width: 899px)') : null;
 }
 
-function placeholder(el: HTMLElement, title: string): () => void {
-  el.replaceChildren(h('div', { class: 'tab-page' }, h('h2', { class: 'title' }, title), h('p', { class: 'muted' }, 'Em breve')));
-  return () => {};
+/** Garagem e Loja: painel expandido sobre o mapa, com o botão Voltar ao mapa (só desktop). */
+function mountExpanded(el: HTMLElement, mount: (slot: HTMLElement) => () => void, onBack: () => void): () => void {
+  const slot = h('div', { class: 'expanded-body' });
+  el.replaceChildren(
+    h('div', { class: 'expanded-bar' },
+      h('button', { type: 'button', class: 'btn btn-light btn-compact back-btn', dataset: { action: 'back' }, onClick: onBack }, 'Voltar ao mapa')),
+    slot,
+  );
+  return mount(slot);
 }
 
 /**
@@ -41,10 +49,13 @@ export function mountPanel(el: HTMLElement, store: Store, opts: { onTab?(tab: Pa
     unmountTab?.();
     unmountTab = null;
     root.dataset.activeTab = tab;
+    const expanded = tab === 'garage' || tab === 'shop';
+    if (expanded) { root.dataset.expanded = 'true'; el.dataset.expanded = 'true'; }
+    else { delete root.dataset.expanded; delete el.dataset.expanded; }
     for (const btn of buttons) btn.setAttribute('aria-selected', String(btn.dataset.tab === tab));
     if (tab === 'lines') unmountTab = mountLinesTab(content, store);
-    else if (tab === 'garage') unmountTab = placeholder(content, 'Garagem');
-    else if (tab === 'shop') unmountTab = placeholder(content, 'Loja');
+    else if (tab === 'garage') unmountTab = mountExpanded(content, (slot) => mountGarageTab(slot, store), () => select('lines'));
+    else if (tab === 'shop') unmountTab = mountExpanded(content, (slot) => mountShopTab(slot, store), () => select('lines'));
     else content.replaceChildren();
     opts.onTab?.(tab);
   }

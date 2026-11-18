@@ -195,11 +195,11 @@ function thumbStripe(style: LiveryStyle, s: Box, fill: string): SVGElement | nul
   const w = s.x1 - s.x0;
   const h = bottom - top;
   if (style === 'plain') return null;
-  if (style === 'stripe') return svg('rect', { 'data-region': 'stripe', x: 0, y: top + h * 0.5, width: 64, height: 6, fill });
+  if (style === 'stripe') return svg('rect', { 'data-part': 'stripe', x: 0, y: top + h * 0.5, width: 64, height: 6, fill });
   if (style === 'diagonal') {
     const dx = h / Math.tan(Math.PI / 3);
     const d = [0.15, 0.4].map((f) => { const a = s.x0 + w * f; return `M${a} ${bottom} L${a + 6} ${bottom} L${a + 6 + dx} ${top} L${a + dx} ${top} Z`; }).join(' ');
-    return svg('path', { 'data-region': 'stripe', d, fill });
+    return svg('path', { 'data-part': 'stripe', d, fill });
   }
-  return svg('path', { 'data-region': 'stripe', d: `M0 30 C22 30 34 16 64 12 L64 19 C34 23 22 37 0 37 Z`, fill });
+  return svg('path', { 'data-part': 'stripe', d: `M0 30 C22 30 34 16 64 12 L64 19 C34 23 22 37 0 37 Z`, fill });
 }

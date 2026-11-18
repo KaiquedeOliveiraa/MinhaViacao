@@ -35,5 +35,6 @@ test('dois ônibus na mesma página não dividem o mesmo recorte', () => {
 test('miniatura da pintura', () => {
   const thumb = liveryThumb('stripe', '#ff7a00', '#ffffff');
   expect(thumb.getAttribute('viewBox')).toBe('0 0 64 40');
-  expect(liveryThumb('plain', '#ff7a00', '#ffffff').querySelector('[data-region="stripe"]')).toBeNull();
+  expect(liveryThumb('plain', '#ff7a00', '#ffffff').querySelector('[data-part="stripe"]')).toBeNull();
+  expect(thumb.querySelector('[data-part="stripe"]')).not.toBeNull();
 });
