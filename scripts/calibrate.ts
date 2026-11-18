@@ -7,7 +7,7 @@ import { catalog, getCity, getModel, getRoad, startModel } from '../src/sim/cata
 import { refPriceCents } from '../src/sim/demand';
 import { createGame, newLine } from '../src/sim/newGame';
 import { lineOccupancy, linePotential, openFeeCents } from '../src/sim/selectors';
-import { testCompany } from '../src/sim/testkit';
+import { startedGame, testCompany } from '../src/sim/testkit';
 import { advance } from '../src/sim/tick';
 import type { BusModel, CityId, GameState, Road } from '../src/sim/types';
 
@@ -18,9 +18,11 @@ const roadName = (r: Road) => `${cityName(r.a)}–${cityName(r.b)}`;
 const results: { n: number; label: string; value: string; ok: boolean }[] = [];
 const check = (n: number, label: string, value: string, ok: boolean) => results.push({ n, label, value, ok });
 
-// (a) minutos até pagar um segundo ônibus inicial, por sede
+// (a) minutos até pagar um segundo ônibus do modelo mais barato, por sede. O começo é o do jogo:
+// createGame (sem ônibus), compra o mais barato e abre a linha da sede até a cidade mais próxima,
+// no preço de referência, com o ônibus nela (primeira linha sem taxa) — startedGame no testkit.
 function minutesToSecondBus(hq: CityId): number | null {
-  let s = createGame(c, { ...testCompany, hqCityId: hq });
+  let s = startedGame(c, { ...testCompany, hqCityId: hq });
   const price = startModel(c).priceCents;
   let minutes = 0;
   while (s.cashCents < price) {
@@ -77,7 +79,7 @@ for (const hq of ['blumenau', 'itajai']) {
   check(2, `${cityName(hq)}: minutos até o 2º ônibus (400 ou mais)`, String(m), m === null || m >= 400);
 }
 {
-  const s0 = createGame(c, { ...testCompany, hqCityId: 'ibirama' });
+  const s0 = startedGame(c, { ...testCompany, hqCityId: 'ibirama' });
   let s = advance(s0, c, 2 * MINUTES_PER_DAY); // fim do dia 2: yesterday = dia 2
   const d2 = s.lines[0]!.yesterday;
   s = advance(s, c, MINUTES_PER_DAY); // fim do dia 3

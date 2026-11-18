@@ -1,11 +1,11 @@
 import { expect, test } from 'vitest';
 import { catalog, startModel } from './catalog';
-import { createGame } from './newGame';
-import { testCompany } from './testkit';
+import { startedGame, testCompany } from './testkit';
 import { advance } from './tick';
 
+// Mesmo fluxo de npm run calibrate: jogo novo, compra o mais barato e abre a primeira linha (sem taxa) com ele.
 test('com sede em Ibirama, o segundo micro-ônibus chega entre 20 e 30 minutos reais', () => {
-  let s = createGame(catalog, { ...testCompany, hqCityId: 'ibirama' });
+  let s = startedGame(catalog, { ...testCompany, hqCityId: 'ibirama' });
   const price = startModel(catalog).priceCents;
   let minutes = 0;
   while (s.cashCents < price && minutes < 5000) { s = advance(s, catalog, 10); minutes += 10; }

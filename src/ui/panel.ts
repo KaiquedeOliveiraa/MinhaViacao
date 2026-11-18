@@ -5,6 +5,8 @@ import { mountLinesTab } from './linesTab';
 import { mountShopTab } from './shopTab';
 
 export type PanelTab = 'map' | 'lines' | 'garage' | 'shop';
+/** `select` deixa quem está de fora (o tutorial) abrir uma aba. */
+export interface PanelHandle { unmount(): void; select(tab: PanelTab): void; }
 const TABS: { id: PanelTab; label: string }[] = [
   { id: 'map', label: 'Mapa' },
   { id: 'lines', label: 'Linhas' },
@@ -31,7 +33,7 @@ function mountExpanded(el: HTMLElement, mount: (slot: HTMLElement) => () => void
  * Painel das abas. Desktop: coluna à direita (a aba Mapa fica escondida).
  * Celular: barra fixa no rodapé; abas que não são o Mapa abrem em tela cheia por cima do mapa.
  */
-export function mountPanel(el: HTMLElement, store: Store, opts: { onTab?(tab: PanelTab): void } = {}): () => void {
+export function mountPanel(el: HTMLElement, store: Store, opts: { onTab?(tab: PanelTab): void } = {}): PanelHandle {
   const query = mobileQuery();
   let current: PanelTab = query?.matches ? 'map' : 'lines';
   let unmountTab: (() => void) | null = null;
@@ -64,8 +66,12 @@ export function mountPanel(el: HTMLElement, store: Store, opts: { onTab?(tab: Pa
   query?.addEventListener?.('change', onQuery);
   select(current);
 
-  return () => {
-    unmountTab?.();
-    query?.removeEventListener?.('change', onQuery);
+  return {
+    select,
+    unmount() {
+      unmountTab?.();
+      unmountTab = null;
+      query?.removeEventListener?.('change', onQuery);
+    },
   };
 }

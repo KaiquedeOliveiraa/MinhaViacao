@@ -118,6 +118,7 @@ export function mountLinesTab(el: HTMLElement, store: Store): () => void {
 
   function keyOf(s: GameState): string {
     return JSON.stringify([
+      s.buses.length === 0,
       s.lines.map((l) => [l.id, busesOnLine(s, l.id).map((b) => [b.id, b.name])]),
       s.buses.filter((b) => b.lineId === null).map((b) => [b.id, b.name]),
     ]);
@@ -130,7 +131,12 @@ export function mountLinesTab(el: HTMLElement, store: Store): () => void {
       structureKey = key;
       cards = new Map(s.lines.map((line) => [line.id, buildCard(s, line)]));
       list.replaceChildren(...[...cards.values()].map((r) => r.card));
-      if (cards.size === 0) list.appendChild(h('p', { class: 'muted empty' }, 'Nenhuma linha. Toque em Nova linha para começar.'));
+      if (cards.size === 0) {
+        const text = s.buses.length === 0
+          ? 'Nenhuma linha ainda. Compre um ônibus na Loja e depois toque em Nova linha.'
+          : 'Nenhuma linha. Toque em Nova linha para começar.';
+        list.appendChild(h('p', { class: 'muted empty' }, text));
+      }
     }
     update();
   }

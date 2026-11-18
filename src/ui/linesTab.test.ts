@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 import { expect, test } from 'vitest';
 import { buyBus } from '../sim/actions';
+import { createGame } from '../sim/newGame';
+import { testCatalog, testCompany } from '../sim/testkit';
 import { mountLinesTab } from './linesTab';
 import { openNewLineDialog } from './newLineDialog';
 import { click, flush, setup } from './uiTestkit';
@@ -41,6 +43,27 @@ test('nova linha: só rotas que tocam a rede, e abrir cobra a taxa', async () =>
   expect(store.getState().lines.map(l => l.id)).toEqual(['alfa-beta', 'beta-gama']);
   expect(store.getState().cashCents).toBe(500_000);
   expect(document.querySelector('[role="dialog"]')).toBeNull();
+});
+test('nova linha: a primeira linha da viação aparece como grátis e vem com o ônibus parado escolhido', async () => {
+  const { store } = setup(); store.replace({ ...createGame(testCatalog, testCompany), cashCents: 2_000_000 });
+  store.dispatch((s, c) => buyBus(s, c, { modelId: 'mini' })); // caixa zerado, passo pintar
+  void openNewLineDialog(store); await flush();
+  expect([...document.querySelectorAll('[data-route]')].map(n => n.getAttribute('data-route')).sort()).toEqual(['alfa-beta', 'alfa-gama']);
+  const card = document.querySelector('[data-route="alfa-beta"]')!;
+  expect(card.textContent).toContain('Taxa de abertura: grátis (primeira linha)');
+  expect(card.getAttribute('aria-disabled')).toBe('false');
+  expect(document.querySelector<HTMLSelectElement>('[aria-label="Ônibus para a linha"]')!.value).toBe('bus-1');
+  click('[data-route="alfa-beta"]'); click('[data-action="confirm"]'); await flush();
+  expect(store.getState().lines.map(l => l.id)).toEqual(['alfa-beta']);
+  expect(store.getState().buses[0]!.lineId).toBe('alfa-beta');
+  expect(store.getState().tutorial).toBe('fim');
+  expect(store.getState().cashCents).toBe(0);
+});
+test('sem linhas e sem ônibus, a aba Linhas diz o que fazer primeiro', () => {
+  const { store, el } = setup(); store.replace(createGame(testCatalog, testCompany)); mountLinesTab(el, store);
+  expect(el.querySelector('.empty')!.textContent).toBe('Nenhuma linha ainda. Compre um ônibus na Loja e depois toque em Nova linha.');
+  store.dispatch((s, c) => buyBus(s, c, { modelId: 'mini' }));
+  expect(el.querySelector('.empty')!.textContent).toBe('Nenhuma linha. Toque em Nova linha para começar.');
 });
 test('nova linha: rota cara demais fica indisponível e diz quanto falta', async () => {
   const { store } = setup(500_000); void openNewLineDialog(store); await flush();

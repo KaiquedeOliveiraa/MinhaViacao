@@ -13,6 +13,7 @@ import { toast } from './toast';
 
 const LIVERY_LABELS: Record<LiveryStyle, string> = { plain: 'Lisa', stripe: 'Faixa reta', diagonal: 'Faixa diagonal', wave: 'Onda' };
 export const LAST_BUS_MESSAGE = 'Sua viação precisa de pelo menos um ônibus.';
+export const EMPTY_GARAGE = 'Nenhum ônibus na garagem. Compre o primeiro na Loja.';
 
 /** Aba Garagem: cada ônibus desenhado com a sua pintura, com renomear, pintura e venda. */
 export function mountGarageTab(el: HTMLElement, store: Store): () => void {
@@ -72,7 +73,8 @@ export function mountGarageTab(el: HTMLElement, store: Store): () => void {
     const next = JSON.stringify([s.company, s.buses.map((b) => [b.id, b.name, b.livery, b.lineId]), s.lines.map((l) => l.id)]);
     if (next === key) return;
     key = next;
-    grid.replaceChildren(...s.buses.map((bus) => card(s, bus)));
+    if (s.buses.length === 0) grid.replaceChildren(h('p', { class: 'muted empty' }, EMPTY_GARAGE));
+    else grid.replaceChildren(...s.buses.map((bus) => card(s, bus)));
   }
 
   render();

@@ -14,6 +14,14 @@ test('um cartão por ônibus, com desenho, selo e valor de venda', () => {
   expect(el.querySelector('[data-bus="bus-2"] svg [data-region="body"]')!.getAttribute('fill')).toBe(testCompany.primaryColor);
   expect(el.querySelector('[data-bus="bus-2"] [data-action="sell"]')!.textContent).toBe('Vender por R$ 10.000');
 });
+test('sem ônibus, a Garagem diz para comprar na Loja', () => {
+  const { store, el } = setup(5_000_000); store.replace({ ...store.getState(), buses: [], lines: [] }); mountGarageTab(el, store);
+  expect(el.querySelectorAll('[data-bus]')).toHaveLength(0);
+  expect(el.querySelector('.empty')!.textContent).toBe('Nenhum ônibus na garagem. Compre o primeiro na Loja.');
+  store.dispatch((s, c) => buyBus(s, c, { modelId: 'mini' }));
+  expect(el.querySelectorAll('[data-bus]')).toHaveLength(1);
+  expect(el.querySelector('.empty')).toBeNull();
+});
 test('o último ônibus não pode ser vendido', () => {
   const { store, el } = setup(); mountGarageTab(el, store);
   const sell = el.querySelector<HTMLButtonElement>('[data-action="sell"]')!;

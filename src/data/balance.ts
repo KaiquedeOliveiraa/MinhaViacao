@@ -13,8 +13,8 @@ export const QUEUE_MAX_HOURS = 3;
 export const INITIAL_QUEUE_HOURS = 1;
 export const DIESEL_CENTS_PER_LITER = 600;
 export const DAILY_FIXED_CENTS_PER_BUS = 35_000;   // calibrar
-export const START_CASH_CENTS = 1_500_000;         // calibrar
+export const START_CASH_CENTS = 3_500_000;         // micro usado (R$ 20.000) + os R$ 15.000 do MVP
 export const SELL_FRACTION = 0.5;
 export const OPEN_FEE_CENTS_PER_PASSENGER = 5_000; // calibrar
-// o ônibus inicial é o modelo mais barato do catálogo: startModel() em catalog.ts
+// o jogo começa sem ônibus; a calibração mede o começo com o modelo mais barato: startModel() em catalog.ts
 export const MAX_NAME_LENGTH = 30;

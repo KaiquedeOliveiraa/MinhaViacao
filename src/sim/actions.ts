@@ -2,7 +2,7 @@ import { MAX_NAME_LENGTH } from '../data/balance';
 import { getCity, getModel, getRoad, routeId } from './catalog';
 import { baseRefPriceCents, priceBoundsCents } from './demand';
 import { isValidLivery, newLine, validateCompanyInput } from './newGame';
-import { openFeeCents, sellValueCents, servedCities } from './selectors';
+import { openFeeForStateCents, sellValueCents, servedCities } from './selectors';
 import type {
   ActionError, ActionResult, Bus, BusId, Catalog, CityId, Company, GameState, LiveryStyle, ModelId, RouteId,
 } from './types';
@@ -14,6 +14,11 @@ const done = (state: GameState): ActionResult => ({ ok: true, state });
 function cleanName(name: string | undefined): string | null {
   const trimmed = (name ?? '').trim();
   return trimmed.length > MAX_NAME_LENGTH ? null : trimmed;
+}
+
+/** Depois de abrir linha ou alocar: com algum ônibus numa linha, o tutorial acabou. */
+function finishTutorialIfRunning(s: GameState): void {
+  if (s.tutorial !== 'fim' && s.buses.some((bus) => bus.lineId !== null)) s.tutorial = 'fim';
 }
 
 function busNumber(bus: Bus): string {
@@ -34,6 +39,7 @@ export function buyBus(s: GameState, c: Catalog, input: { modelId: ModelId; name
   });
   next.nextBusNumber = number + 1;
   next.cashCents -= model.priceCents;
+  if (next.tutorial === 'comprar') next.tutorial = 'pintar';
   return done(next);
 }
 
@@ -64,7 +70,19 @@ export function setBusLivery(s: GameState, _c: Catalog, busId: BusId, livery: Li
   if (!isValidLivery(livery)) return fail('pintura_invalida');
   const next = structuredClone(s);
   next.buses[index]!.livery = livery;
+  if (next.tutorial === 'pintar') next.tutorial = 'linha';
   return done(next);
+}
+
+/** Tutorial: o jogador fica com a pintura que o ônibus já tem. */
+export function confirmPaint(s: GameState, _c: Catalog): ActionResult {
+  if (s.tutorial !== 'pintar') return done(s);
+  return done({ ...structuredClone(s), tutorial: 'linha' });
+}
+
+export function skipTutorial(s: GameState, _c: Catalog): ActionResult {
+  if (s.tutorial === 'fim') return done(s);
+  return done({ ...structuredClone(s), tutorial: 'fim' });
 }
 
 function putOnLine(bus: Bus, lineId: RouteId): void {
@@ -91,12 +109,13 @@ export function openLine(s: GameState, c: Catalog, input: { a: CityId; b: CityId
     if (busIndex < 0) return fail('onibus_inexistente');
     if (s.buses[busIndex]!.lineId !== null) return fail('onibus_ocupado');
   }
-  const fee = openFeeCents(c, a, b);
+  const fee = openFeeForStateCents(s, c, a, b);
   if (s.cashCents < 0 || s.cashCents < fee) return fail('saldo_insuficiente');
   const next = structuredClone(s);
   next.lines.push(newLine(c, a, b, clampPrice(road.distanceKm, input.priceCents, baseRefPriceCents(road.distanceKm))));
   next.cashCents -= fee;
   if (busIndex >= 0) putOnLine(next.buses[busIndex]!, id);
+  finishTutorialIfRunning(next);
   return done(next);
 }
 
@@ -140,6 +159,7 @@ export function assignBus(s: GameState, _c: Catalog, busId: BusId, lineId: Route
   if (s.buses[index]!.lineId !== null) return fail('onibus_ocupado');
   const next = structuredClone(s);
   putOnLine(next.buses[index]!, lineId);
+  finishTutorialIfRunning(next);
   return done(next);
 }
 

@@ -54,7 +54,7 @@ A dúvida era o recorte do MVP. Kaique escolheu a **fatia fina de tudo**.
 Outras decisões tomadas na conversa:
 
 - **Tempo contínuo**, com pausa e velocidades, em vez de passar dia a dia. Decisão do Kaique.
-- **Linhas que repetem sozinhas**, em vez de despachar cada viagem na mão. O jogo começa com uma linha pronta. Decisão do Kaique.
+- **Linhas que repetem sozinhas**, em vez de despachar cada viagem na mão. O jogo começava com uma linha pronta; na fase 2 passou a começar sem ônibus, com um tutorial (ver "O que o jogador faz"). Decisão do Kaique.
 - **Demanda estimada pela população** das cidades, já que não há dado real de demanda. Ideia do Kaique.
 - **Quatro cidades:** Ibirama (sede), Blumenau, Itajaí e Florianópolis. Decisão do Kaique.
 - **Logo por ícone pronto ou imagem enviada.** Ideia do Kaique.
@@ -62,13 +62,15 @@ Outras decisões tomadas na conversa:
 
 ## O que o jogador faz
 
-Na primeira vez, o jogador cria a empresa e cai direto no mapa com um ônibus já rodando.
+Na primeira vez, o jogador cria a empresa e cai no mapa sem nenhum ônibus, com R$ 35.000 em caixa. Um cartão de tutorial sobre o mapa guia os três primeiros passos (fase 2).
 
 1. **Criar empresa.** Digita o nome, escolhe a cidade-sede, escolhe duas cores, escolhe a logo (ícone pronto ou imagem enviada) e um estilo de pintura. Vê o ônibus pintado ao lado enquanto escolhe.
-2. **Ver a linha inicial rodar.** O jogo abre no mapa com uma linha já ativa, da sede até a cidade mais próxima, e um micro-ônibus usado nela.
-3. **Ajustar o preço.** Mexe no preço da passagem da linha e observa a lotação e o caixa reagirem.
-4. **Comprar outro ônibus.** Com dinheiro em caixa, compra na loja e dá um nome a ele.
-5. **Abrir outra linha.** Escolhe duas cidades, um ônibus parado e um preço. A linha passa a repetir sozinha.
+2. **Comprar o primeiro ônibus.** "Passo 1 de 3": o cartão abre a Loja; o micro-ônibus usado (R$ 20 mil) cabe no caixa.
+3. **Pintar.** "Passo 2 de 3": o cartão abre a Garagem; o jogador escolhe a pintura do ônibus ou mantém a que veio.
+4. **Abrir a primeira linha.** "Passo 3 de 3": o cartão abre a janela de nova linha, já com o ônibus escolhido. A primeira linha da viação não paga taxa de abertura. Com o ônibus rodando, o tutorial acaba. O cartão tem também "Pular tutorial".
+5. **Ajustar o preço.** Mexe no preço da passagem da linha e observa a lotação e o caixa reagirem.
+6. **Comprar outro ônibus.** Com dinheiro em caixa, compra na loja e dá um nome a ele.
+7. **Abrir outra linha.** Escolhe duas cidades, um ônibus parado e um preço. A linha passa a repetir sozinha.
 
 **Tela inicial.** Ao abrir o endereço do jogo, a pessoa vê uma tela de entrada, e não o mapa (ideia do Kaique). Ela tem o nome do jogo, uma frase explicando o que ele é, um ônibus ilustrado e os botões:
 
@@ -135,7 +137,7 @@ Todos os números desta seção são valores iniciais propostos pelo Claude. Ele
 **Regras adicionadas na revisão de brechas**
 
 - **Rede conectada.** Uma linha nova precisa tocar uma cidade que a empresa já atende. Quem começa em uma cidade pequena não pode pular direto para a linha mais lucrativa do mapa; precisa chegar até ela.
-- **Taxa de abertura.** Abrir uma linha custa um valor único, maior quanto maior o potencial dela. O valor entra na calibração.
+- **Taxa de abertura.** Abrir uma linha custa um valor único, maior quanto maior o potencial dela. O valor entra na calibração. A primeira linha da viação é de graça (fase 2): um caixa inicial único para todas as sedes não cobriria taxas que vão de R$ 6.924 a R$ 31.896 sem desfazer a dificuldade de cada sede.
 - **Saídas espaçadas.** Com mais de um ônibus na linha, as partidas de cada ponta são espaçadas por igual. Sem isso, os ônibus andariam colados e o primeiro levaria todos os passageiros.
 - **Linha sem ônibus.** Fica inativa: não acumula fila e usa conforto 1,0 no preço de referência.
 
@@ -194,7 +196,7 @@ Todos andam a 60 km/h de média.
 | Convencional | Convencional Serra 44 | 44 | 1,0 | 3,2 | R$ 120 mil |
 | Rodoviário | Rodoviário Litoral 46 | 46 | 1,2 | 2,8 | R$ 170 mil |
 
-O jogador começa com um micro-ônibus usado e R$ 15 mil em caixa. O custo fixo segue R$ 350 por ônibus por dia.
+O jogador começa sem ônibus e com R$ 35 mil em caixa: o micro-ônibus usado (R$ 20 mil) mais os R$ 15 mil do começo original. Comprado o micro e aberta a primeira linha (sem taxa), ele fica exatamente no começo calibrado abaixo. O custo fixo segue R$ 350 por ônibus por dia.
 
 **Meta de calibração:** o segundo ônibus deve ser alcançável em 20 a 30 minutos reais de jogo. Todo valor em dinheiro é guardado em centavos inteiros, para não acumular erro de arredondamento.
 
@@ -209,6 +211,8 @@ O jogador começa com um micro-ônibus usado e R$ 15 mil em caixa. O custo fixo 
 | Convencional na melhor linha | 3 a 8 dias | 5,9 |
 | Rodoviário na melhor linha | 3 a 8 dias | 6,5 |
 | Taxa de Blumenau ⇄ Itajaí ÷ lucro diário do micro nela | 2 a 5 | 3,4 |
+
+**Começo sem ônibus (fase 2, 18/11).** A calibração passou a simular o começo novo: jogo novo, compra do micro, primeira linha da sede até a cidade mais próxima no preço de referência do micro, com o ônibus nela, e o tempo até o caixa pagar outro micro. Os seis critérios continuam todos dentro da faixa, com os mesmos números da tabela acima (Ibirama 1340, Blumenau 750, Itajaí 750, Florianópolis 830 minutos). Abrindo a linha pela janela, no preço que ela sugere (referência com conforto 1,0, um pouco acima da do micro), Ibirama leva 1420 minutos, ainda na faixa.
 
 ## Mapa
 
@@ -229,7 +233,7 @@ As populações vêm do Censo 2022 do IBGE e as distâncias do traçado gerado; 
 - **Fundo do mapa.** Um mapa-base escuro e gratuito, com a atribuição exigida. Os termos de uso do provedor precisam ser conferidos antes de publicar.
 - **Marcadores.** Cada ônibus aparece como um marcador pequeno nas cores da empresa. Cada cidade é um ponto com o nome.
 
-**Sede escolhida pelo jogador.** Na criação da empresa, o jogador escolhe a sede entre as cidades do mapa (decisão do Kaique). A linha inicial liga a sede à cidade mais próxima. A sede funciona como nível de dificuldade: começar em Ibirama é difícil, porque a linha inicial rende pouco; começar em Blumenau ou Itajaí é fácil, porque a linha inicial é a melhor do mapa. A tela de escolha mostra essa dificuldade (proposta do Claude).
+**Sede escolhida pelo jogador.** Na criação da empresa, o jogador escolhe a sede entre as cidades do mapa (decisão do Kaique). A primeira linha natural liga a sede à cidade mais próxima. A sede funciona como nível de dificuldade: começar em Ibirama é difícil, porque essa linha rende pouco; começar em Blumenau ou Itajaí é fácil, porque ela é a melhor do mapa. A tela de escolha mostra essa dificuldade (proposta do Claude).
 
 **Ponto da cidade na rodoviária.** O ponto de cada cidade no mapa fica na rodoviária real, quando ela existe, e no centro da cidade quando não existe (ideia do Kaique). As rotas são geradas de rodoviária a rodoviária. As coordenadas vêm do OpenStreetMap e são conferidas uma a uma na implementação.
 

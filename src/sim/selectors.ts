@@ -22,6 +22,11 @@ export function openFeeCents(c: Catalog, a: CityId, b: CityId): number {
   return Math.round(linePotential(c, a, b) * OPEN_FEE_CENTS_PER_PASSENGER);
 }
 
+/** Taxa que a viação paga para abrir a rota: a primeira linha dela é de graça. */
+export function openFeeForStateCents(s: GameState, c: Catalog, a: CityId, b: CityId): number {
+  return s.lines.length === 0 ? 0 : openFeeCents(c, a, b);
+}
+
 /** Rotas ainda sem linha que tocam a rede; `a` é sempre a cidade já atendida. */
 export function openableRoutes(s: GameState, c: Catalog): { a: CityId; b: CityId; feeCents: number; potential: number; distanceKm: number }[] {
   const served = new Set(servedCities(s));
@@ -33,7 +38,7 @@ export function openableRoutes(s: GameState, c: Catalog): { a: CityId; b: CityId
     if (served.has(road.a)) { a = road.a; b = road.b; }
     else if (served.has(road.b)) { a = road.b; b = road.a; }
     else continue;
-    out.push({ a, b, feeCents: openFeeCents(c, a, b), potential: linePotential(c, a, b), distanceKm: road.distanceKm });
+    out.push({ a, b, feeCents: openFeeForStateCents(s, c, a, b), potential: linePotential(c, a, b), distanceKm: road.distanceKm });
   }
   return out;
 }

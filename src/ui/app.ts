@@ -15,12 +15,14 @@ import { confirmDialog } from './dialog';
 import { h } from './dom';
 import { errorMessage } from './format';
 import { renderInstallCard } from './installCard';
+import { openNewLineDialog } from './newLineDialog';
 import { mountPanel } from './panel';
 import { renderStartScreen } from './startScreen';
 import { renderStatsBlock } from './statsBlock';
 import { applyTheme, DEFAULT_PRIMARY, DEFAULT_SECONDARY } from './theme';
 import { toast } from './toast';
 import { mountTopBar } from './topBar';
+import { mountTutorialCard } from './tutorialCard';
 
 export type Screen = 'start' | 'create' | 'game';
 export interface BootDeps { catalog: Catalog; kv: KeyValue | null; locks?: Pick<LockManager, 'request'>; }
@@ -136,7 +138,8 @@ function startApp(root: HTMLElement, catalog: Catalog, storage: SaveStorage): vo
     const topSlot = h('div', { class: 'game-top' });
     const mapSlot = h('div', { class: 'game-map' });
     const panelSlot = h('aside', { class: 'game-panel' });
-    root.replaceChildren(h('div', { class: 'game-screen' }, topSlot, mapSlot, panelSlot));
+    const tutorialSlot = h('div', { class: 'game-tutorial' });
+    root.replaceChildren(h('div', { class: 'game-screen' }, topSlot, mapSlot, panelSlot, tutorialSlot));
 
     const detachAutosave = attachAutosave(store, storage, warnSaveFailed);
     const unmountTop = mountTopBar(topSlot, store, {
@@ -156,7 +159,11 @@ function startApp(root: HTMLElement, catalog: Catalog, storage: SaveStorage): vo
       }),
     });
     const unmountMap = mountMap(mapSlot, store);
-    const unmountPanel = mountPanel(panelSlot, store);
+    const panel = mountPanel(panelSlot, store);
+    const unmountTutorial = mountTutorialCard(tutorialSlot, store, {
+      openTab: (tab) => panel.select(tab),
+      openNewLine: () => { void openNewLineDialog(store); },
+    });
     const offTheme = store.on('change', () => {
       if (!document.querySelector('.identity-overlay')) applyTheme(document.documentElement, store.getState().company);
     });
@@ -168,7 +175,8 @@ function startApp(root: HTMLElement, catalog: Catalog, storage: SaveStorage): vo
       offTheme();
       detachAutosave();
       unmountTop();
-      unmountPanel();
+      unmountTutorial();
+      panel.unmount();
       unmountMap();
       if (save) {
         saved = store.getState();

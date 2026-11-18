@@ -1,10 +1,9 @@
 import { expect, test } from 'vitest';
-import { createGame } from '../sim/newGame';
-import { testCatalog, testCompany } from '../sim/testkit';
+import { startedGame, testCatalog } from '../sim/testkit';
 import { advance } from '../sim/tick';
 import { parseSave, serialize, type ParseResult } from './schema';
 
-const good = () => advance(createGame(testCatalog, testCompany), testCatalog, 95); // tem ônibus em viagem
+const good = () => advance(startedGame(testCatalog), testCatalog, 95); // tem ônibus em viagem
 const parse = (mutate: (raw: any) => void) => { const raw = JSON.parse(serialize(good())); mutate(raw); return parseSave(raw, testCatalog); };
 const error = (r: ParseResult) => (r.ok ? null : r.error);
 

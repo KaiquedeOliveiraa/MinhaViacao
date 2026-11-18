@@ -14,6 +14,7 @@ export function openNewLineDialog(store: Store): Promise<void> {
   const name = (id: string) => getCity(c, id)?.name ?? id;
   const routes = openableRoutes(s, c).sort((x, y) => y.potential - x.potential);
   let chosen: (typeof routes)[number] | null = null;
+  const firstLine = s.lines.length === 0; // a primeira linha da viação não paga taxa (openFeeForStateCents)
 
   const cards = routes.map((route) => {
     const id = routeId(route.a, route.b);
@@ -29,7 +30,7 @@ export function openNewLineDialog(store: Store): Promise<void> {
     },
       h('span', { class: 'route-top' }, h('span', { class: 'route-name' }, `${name(route.a)} ⇄ ${name(route.b)}`), h('span', { class: 'muted small' }, `${Math.round(route.distanceKm)} km`)),
       h('span', { class: 'small' }, `Demanda estimada: ${Math.round(route.potential)} passageiros por dia em cada sentido`),
-      h('span', { class: 'small' }, `Taxa de abertura: ${formatMoney(route.feeCents)}`),
+      h('span', { class: 'small' }, firstLine ? 'Taxa de abertura: grátis (primeira linha)' : `Taxa de abertura: ${formatMoney(route.feeCents)}`),
       disabled ? h('span', { class: 'small money-down' }, `Faltam ${formatMoney(Math.max(0, missing))}`) : null,
     );
     return card;
@@ -40,6 +41,8 @@ export function openNewLineDialog(store: Store): Promise<void> {
     h('option', { value: '' }, idle.length ? 'Sem ônibus por enquanto' : 'Nenhum ônibus parado'),
     ...idle.map((bus) => h('option', { value: bus.id }, bus.name)),
   );
+  // no tutorial, a linha nova já vem com o ônibus parado escolhido
+  if (s.tutorial !== 'fim' && idle[0]) busSelect.value = idle[0].id;
 
   const body = routes.length === 0
     ? [h('p', { class: 'dialog-message' }, 'Você já opera todas as linhas que saem da sua rede.')]

@@ -1,9 +1,8 @@
 import { expect, test } from 'vitest';
-import { createGame } from './newGame';
-import { testCatalog, testCompany } from './testkit';
+import { startedGame, testCatalog } from './testkit';
 import { advance } from './tick';
 
-const fresh = () => createGame(testCatalog, testCompany);
+const fresh = () => startedGame(testCatalog);
 
 test('avançar zero minutos não muda nada, e não altera o estado recebido', () => {
   const s = fresh(); const copy = structuredClone(s);

@@ -1,10 +1,9 @@
 import { createStore } from '../game/store';
-import { createGame } from '../sim/newGame';
-import { testCatalog, testCompany } from '../sim/testkit';
+import { startedGame, testCatalog } from '../sim/testkit';
 
-/** Início comum dos testes de interface da fase 5: store pausado com o catálogo de teste. */
+/** Início comum dos testes de interface da fase 5: store pausado com o catálogo de teste, já com o ônibus na primeira linha. */
 export const setup = (cashCents = 1_500_000) => {
-  const store = createStore(testCatalog, { ...createGame(testCatalog, testCompany), cashCents }, 0); // pausado
+  const store = createStore(testCatalog, { ...startedGame(testCatalog), cashCents }, 0); // pausado
   const el = document.createElement('div'); document.body.replaceChildren(el);
   return { store, el };
 };

@@ -1,6 +1,6 @@
 import { INITIAL_QUEUE_HOURS, MAX_NAME_LENGTH, START_CASH_CENTS } from '../data/balance';
-import { getCity, getRoad, nearestCity, routeId, startModel } from './catalog';
-import { potentialPerDay, refPriceCents } from './demand';
+import { getCity, getRoad, routeId } from './catalog';
+import { potentialPerDay } from './demand';
 import type { Catalog, CityId, Company, DayStats, GameState, Line, LiveryStyle, LogoIconId } from './types';
 
 export const LOGO_ICON_IDS: readonly LogoIconId[] = ['wheel', 'road', 'bus', 'pine', 'mountain', 'wave'];
@@ -71,22 +71,15 @@ export function createGame(c: Catalog, input: CompanyInput): GameState {
   const errors = validateCompanyInput(input, c);
   if (errors.length > 0) throw new Error(`empresa inválida: ${errors.join(', ')}`);
   const company: Company = { ...input, name: input.name.trim(), logo: { ...input.logo } };
-  const model = startModel(c);
-  const hq = company.hqCityId;
-  const other = nearestCity(c, hq);
-  const road = getRoad(c, hq, other)!;
-  const line = newLine(c, hq, other, refPriceCents(road.distanceKm, model.comfort));
+  // sem ônibus e sem linhas: o tutorial guia a compra, a pintura e a primeira linha (que não paga taxa)
   return {
     version: 2,
     company,
     cashCents: START_CASH_CENTS,
     clockMinutes: 0,
-    buses: [{
-      id: 'bus-1', modelId: model.id, name: `${model.name} #1`, livery: company.defaultLivery,
-      lineId: line.id, trip: { phase: 'waiting', at: 'a', minutesLeft: 0 }, driverId: null,
-    }],
-    lines: [line],
-    nextBusNumber: 2,
-    tutorial: 'fim',
+    buses: [],
+    lines: [],
+    nextBusNumber: 1,
+    tutorial: 'comprar',
   };
 }

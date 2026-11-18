@@ -3,7 +3,7 @@
 Jogo de navegador, para um jogador, em que você cria uma empresa de ônibus em Santa Catarina — nome, logo e pintura — e a faz crescer operando linhas entre cidades reais em um mapa real.
 
 - Crie a viação: nome, cidade-sede (que define a dificuldade), duas cores, logo (ícone pronto ou imagem sua) e estilo de pintura.
-- O jogo começa com uma linha da sede até a cidade mais próxima e um micro-ônibus usado rodando nela.
+- O jogo começa sem ônibus e com R$ 35.000 em caixa: um tutorial curto guia a compra do primeiro ônibus, a pintura dele e a abertura da primeira linha, que não paga taxa.
 - Ajuste o preço da passagem, compre ônibus, abra novas linhas a partir da sua rede e pinte cada ônibus do seu jeito.
 - Funciona no celular (a partir de 360 px) e no computador, e pode ser instalado na tela inicial do celular.
 

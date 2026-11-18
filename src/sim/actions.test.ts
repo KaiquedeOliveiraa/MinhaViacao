@@ -1,13 +1,14 @@
 import { expect, test } from 'vitest';
 import {
-  assignBus, buyBus, closeLine, openLine, renameBus, sellBus, setBusLivery, setLinePaused, setLinePrice, unassignBus, updateCompany,
+  assignBus, buyBus, closeLine, confirmPaint, openLine, renameBus, sellBus, setBusLivery, setLinePaused, setLinePrice, skipTutorial,
+  unassignBus, updateCompany,
 } from './actions';
 import { createGame } from './newGame';
-import { testCatalog, testCompany } from './testkit';
+import { startedGame, testCatalog, testCompany } from './testkit';
 import { advance } from './tick';
-import type { ActionResult, LiveryStyle } from './types';
+import type { ActionResult, GameState, LiveryStyle, TutorialStep } from './types';
 
-const fresh = () => createGame(testCatalog, testCompany);
+const fresh = () => startedGame(testCatalog);
 const rich = () => ({ ...fresh(), cashCents: 5_000_000 });
 const err = (r: ActionResult) => (r.ok ? null : r.error);
 const ok = (r: ActionResult) => { if (!r.ok) throw new Error(r.error); return r.state; };
@@ -105,4 +106,66 @@ test('abrir linha já com um ônibus parado', () => {
   const two = ok(buyBus(rich(), testCatalog, { modelId: 'mini' }));
   const s = ok(openLine(two, testCatalog, { a: 'beta', b: 'gama', busId: two.buses[1]!.id }));
   expect(s.buses[1]).toMatchObject({ lineId: 'beta-gama', trip: { phase: 'waiting', at: 'a', minutesLeft: 0 } });
+});
+
+// Começo sem ônibus (fase 2): primeira linha sem taxa e o tutorial.
+const blank = () => createGame(testCatalog, testCompany);
+const at = (tutorial: TutorialStep, s: GameState = blank()): GameState => ({ ...s, tutorial });
+const withBus = () => ok(buyBus(blank(), testCatalog, { modelId: 'mini' }));
+
+test('a primeira linha da viação não cobra taxa e a segunda cobra', () => {
+  const first = ok(openLine(withBus(), testCatalog, { a: 'alfa', b: 'beta' }));
+  expect(first.cashCents).toBe(1_500_000);
+  const second = ok(openLine(first, testCatalog, { a: 'beta', b: 'gama' }));
+  expect(second.cashCents).toBe(1_500_000 - 1_000_000);
+});
+test('a primeira linha abre mesmo sem caixa para a taxa normal', () => {
+  expect(ok(openLine({ ...blank(), cashCents: 0 }, testCatalog, { a: 'alfa', b: 'beta' })).lines).toHaveLength(1);
+});
+test('tutorial: comprar um ônibus no passo comprar leva a pintar', () => {
+  expect(withBus().tutorial).toBe('pintar');
+});
+test('tutorial: comprar fora do passo comprar não mexe no tutorial', () => {
+  const s = { ...withBus(), cashCents: 5_000_000 };
+  expect(ok(buyBus(at('linha', s), testCatalog, { modelId: 'mini' })).tutorial).toBe('linha');
+  expect(ok(buyBus(at('fim', s), testCatalog, { modelId: 'mini' })).tutorial).toBe('fim');
+});
+test('tutorial: trocar a pintura no passo pintar leva a linha', () => {
+  const s = withBus();
+  expect(ok(setBusLivery(s, testCatalog, s.buses[0]!.id, 'wave')).tutorial).toBe('linha');
+  expect(ok(setBusLivery(at('comprar', s), testCatalog, s.buses[0]!.id, 'wave')).tutorial).toBe('comprar');
+});
+test('tutorial: manter a pintura no passo pintar leva a linha', () => {
+  const s = withBus();
+  const kept = ok(confirmPaint(s, testCatalog));
+  expect(kept.tutorial).toBe('linha');
+  expect(kept.buses).toEqual(s.buses);
+  expect(ok(confirmPaint(at('comprar'), testCatalog)).tutorial).toBe('comprar');
+  expect(ok(confirmPaint(at('fim'), testCatalog)).tutorial).toBe('fim');
+});
+test('tutorial: abrir a linha com o ônibus nela termina o tutorial', () => {
+  const s = at('linha', withBus());
+  expect(ok(openLine(s, testCatalog, { a: 'alfa', b: 'beta', busId: s.buses[0]!.id })).tutorial).toBe('fim');
+});
+test('tutorial: abrir a linha com o ônibus antes de pintar também termina o tutorial', () => {
+  const s = withBus(); // passo pintar
+  expect(ok(openLine(s, testCatalog, { a: 'alfa', b: 'beta', busId: s.buses[0]!.id })).tutorial).toBe('fim');
+});
+test('tutorial: linha aberta sem ônibus não termina o tutorial; colocar o ônibus nela termina', () => {
+  const s = at('linha', withBus());
+  const open = ok(openLine(s, testCatalog, { a: 'alfa', b: 'beta' }));
+  expect(open.tutorial).toBe('linha');
+  expect(ok(assignBus(open, testCatalog, s.buses[0]!.id, 'alfa-beta')).tutorial).toBe('fim');
+});
+test('pular o tutorial vai direto para o fim', () => {
+  for (const step of ['comprar', 'pintar', 'linha', 'fim'] as const) expect(ok(skipTutorial(at(step), testCatalog)).tutorial).toBe('fim');
+});
+test('as outras ações não mexem no tutorial', () => {
+  const s = at('pintar', ok(openLine(at('linha', withBus()), testCatalog, { a: 'alfa', b: 'beta' })));
+  const id = s.buses[0]!.id;
+  expect(ok(renameBus(s, testCatalog, id, 'Novo')).tutorial).toBe('pintar');
+  expect(ok(setLinePrice(s, testCatalog, 'alfa-beta', 3000)).tutorial).toBe('pintar');
+  expect(ok(setLinePaused(s, testCatalog, 'alfa-beta', true)).tutorial).toBe('pintar');
+  expect(ok(closeLine(s, testCatalog, 'alfa-beta')).tutorial).toBe('pintar');
+  expect(ok(unassignBus(s, testCatalog, id)).tutorial).toBe('pintar');
 });
