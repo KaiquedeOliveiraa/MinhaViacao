@@ -17,7 +17,7 @@ test('select abre uma aba por fora (o tutorial usa) e unmount desmonta a aba', (
   const { store, el } = setup(); const panel = mountPanel(el, store);
   panel.select('shop');
   expect(el.querySelector('[data-tab="shop"]')!.getAttribute('aria-selected')).toBe('true');
-  expect(el.querySelectorAll('[data-model]')).toHaveLength(1);
+  expect(el.querySelectorAll('[data-offer]')).toHaveLength(3); // uma por oferta do catálogo de teste
   panel.select('garage');
   expect(el.querySelectorAll('[data-bus]')).toHaveLength(1);
   panel.unmount();

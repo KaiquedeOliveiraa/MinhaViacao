@@ -1,0 +1,71 @@
+{
+  "version": 2,
+  "company": {
+    "name": "Viação Fixture Dois",
+    "hqCityId": "blumenau",
+    "primaryColor": "#0b6e4f",
+    "secondaryColor": "#f5f5f5",
+    "logo": {
+      "kind": "icon",
+      "iconId": "road"
+    },
+    "defaultLivery": "wave"
+  },
+  "cashCents": 12736,
+  "clockMinutes": 16042,
+  "buses": [
+    {
+      "id": "bus-1",
+      "modelId": "micro",
+      "name": "Micro Vale 24 (usado) #1",
+      "livery": "stripe",
+      "lineId": "blumenau-itajai",
+      "trip": {
+        "phase": "moving",
+        "from": "a",
+        "progress": 0.5689655172413792,
+        "passengers": 24,
+        "fareCents": 2280
+      },
+      "driverId": null
+    },
+    {
+      "id": "bus-2",
+      "modelId": "conv",
+      "name": "Serra Nova",
+      "livery": "wave",
+      "lineId": null,
+      "trip": {
+        "phase": "idle"
+      },
+      "driverId": null
+    }
+  ],
+  "lines": [
+    {
+      "id": "blumenau-itajai",
+      "a": "blumenau",
+      "b": "itajai",
+      "priceCents": 2280,
+      "paused": false,
+      "queueA": 70.35808977296752,
+      "queueB": 79.73923079405705,
+      "lastDepartA": 16008,
+      "lastDepartB": 15939,
+      "today": {
+        "revenueCents": 164160,
+        "dieselCents": 23241,
+        "passengers": 72,
+        "seatsOffered": 72
+      },
+      "yesterday": {
+        "revenueCents": 1149120,
+        "dieselCents": 162687,
+        "passengers": 504,
+        "seatsOffered": 504
+      }
+    }
+  ],
+  "nextBusNumber": 3,
+  "tutorial": "fim"
+}

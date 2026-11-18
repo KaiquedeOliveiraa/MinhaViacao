@@ -30,11 +30,12 @@ test('criar uma viação, seguir o tutorial, ganhar dinheiro e continuar depois 
   await expect(tutorial).toContainText('Passo 1 de 3');
   await expectNoHorizontalScroll(page, 'mapa com o tutorial');
 
-  // passo 1: Loja → comprar o micro usado
+  // passo 1: Loja (uma oferta por cartão, novos e usados) → comprar o micro usado 2012
   await tutorial.getByRole('button', { name: 'Abrir a Loja' }).click();
-  await expect(page.locator('[data-model]')).toHaveCount(3);
+  await expect(page.locator('[data-offer]')).toHaveCount(14);
   await expectNoHorizontalScroll(page, 'loja');
-  await page.locator('[data-model="micro"] [data-action="buy"]').click();
+  await expect(page.locator('[data-offer="micro-2012"]')).toContainText('Usado');
+  await page.locator('[data-offer="micro-2012"] [data-action="buy"]').click();
   await page.locator('.dialog-panel [data-action="confirm"]').click();
   await expect(cash).toHaveText('R$ 15.000');
   await expect(tutorial).toContainText('Passo 2 de 3');

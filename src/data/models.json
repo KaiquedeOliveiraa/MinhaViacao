@@ -1,5 +1,8 @@
 [
-  { "id": "micro", "name": "Micro Vale 24 (usado)", "shape": "micro", "seats": 24, "comfort": 0.9, "kmPerLiter": 4.5, "priceCents": 2000000 },
-  { "id": "conv", "name": "Convencional Serra 44", "shape": "conv", "seats": 44, "comfort": 1.0, "kmPerLiter": 3.2, "priceCents": 12000000 },
-  { "id": "rodo", "name": "Rodoviário Litoral 46", "shape": "rodo", "seats": 46, "comfort": 1.2, "kmPerLiter": 2.8, "priceCents": 17000000 }
+  { "id": "van", "name": "Van Trilha 15", "category": "van", "shape": "van", "seats": 15, "comfort": 0.9, "kmPerLiter": 7.5, "priceCents": 3800000 },
+  { "id": "micro", "name": "Micro Vale 24", "category": "micro", "shape": "micro", "seats": 24, "comfort": 0.9, "kmPerLiter": 4.5, "priceCents": 5500000 },
+  { "id": "micro32", "name": "Micro Vale 32", "category": "micro", "shape": "micro", "seats": 32, "comfort": 0.95, "kmPerLiter": 4.0, "priceCents": 7500000 },
+  { "id": "conv", "name": "Convencional Serra 44", "category": "onibus", "shape": "conv", "seats": 44, "comfort": 1.0, "kmPerLiter": 3.2, "priceCents": 12000000 },
+  { "id": "rodo", "name": "Rodoviário Litoral 46", "category": "rodoviario", "shape": "rodo", "seats": 46, "comfort": 1.2, "kmPerLiter": 2.8, "priceCents": 17000000 },
+  { "id": "rodo42", "name": "Rodoviário Litoral Executivo 42", "category": "rodoviario", "shape": "rodo", "seats": 42, "comfort": 1.35, "kmPerLiter": 2.7, "priceCents": 21000000 }
 ]

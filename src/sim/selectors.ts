@@ -1,4 +1,4 @@
-import { DAILY_FIXED_CENTS_PER_BUS, MINUTES_PER_DAY, OPEN_FEE_CENTS_PER_PASSENGER, SELL_FRACTION } from '../data/balance';
+import { DAILY_FIXED_CENTS_PER_BUS, MINUTES_PER_DAY, OPEN_FEE_CENTS_PER_PASSENGER } from '../data/balance';
 import { getCity, getModel, getRoad } from './catalog';
 import { potentialPerDay, refPriceCents } from './demand';
 import type { Bus, Catalog, CityId, GameState, Line, RouteId } from './types';
@@ -71,9 +71,4 @@ export function lineProfitTodayCents(s: GameState, line: Line): number {
   const dayFraction = (s.clockMinutes % MINUTES_PER_DAY) / MINUTES_PER_DAY;
   const fixed = Math.round(DAILY_FIXED_CENTS_PER_BUS * busesOnLine(s, line.id).length * dayFraction);
   return line.today.revenueCents - line.today.dieselCents - fixed;
-}
-
-export function sellValueCents(c: Catalog, bus: Bus): number {
-  const model = getModel(c, bus.modelId);
-  return model ? Math.round(model.priceCents * SELL_FRACTION) : 0;
 }

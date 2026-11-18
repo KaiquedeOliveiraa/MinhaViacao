@@ -1,8 +1,9 @@
 import { expect, test } from 'vitest';
 import {
-  assignBus, buyBus, closeLine, confirmPaint, openLine, renameBus, sellBus, setBusLivery, setLinePaused, setLinePrice, skipTutorial,
-  unassignBus, updateCompany,
+  assignBus, buyBus, buyOffer, closeLine, confirmPaint, listBus, openLine, renameBus, sellBus, setBusLivery, setLinePaused, setLinePrice,
+  skipTutorial, unassignBus, unlistBus, updateCompany,
 } from './actions';
+import { fairValueCents, sellNowCents } from './market';
 import { createGame } from './newGame';
 import { startedGame, testCatalog, testCompany } from './testkit';
 import { advance } from './tick';
@@ -31,7 +32,9 @@ test('vender ônibus', () => {
   const two = ok(buyBus(rich(), testCatalog, { modelId: 'mini' }));
   const sold = ok(sellBus(two, testCatalog, two.buses[0]!.id)); // o que está na linha
   expect(sold.buses).toHaveLength(1);
-  expect(sold.cashCents).toBe(3_000_000 + 1_000_000);
+  expect(sold.cashCents).toBe(3_000_000 + 1_360_000); // 80% do valor justo do novo (85% do preço)
+  const worn = structuredClone(two); worn.buses[0]!.odometerKm = 150_000; worn.clockMinutes = 365 * 1440;
+  expect(ok(sellBus(worn, testCatalog, worn.buses[0]!.id)).cashCents).toBe(3_000_000 + Math.round(0.8 * Math.round(2_000_000 * 0.85 * 0.9 * 0.9)));
   expect(err(sellBus(two, testCatalog, 'fantasma'))).toBe('onibus_inexistente');
 });
 test('abrir linha', () => {
@@ -168,4 +171,73 @@ test('as outras ações não mexem no tutorial', () => {
   expect(ok(setLinePaused(s, testCatalog, 'alfa-beta', true)).tutorial).toBe('pintar');
   expect(ok(closeLine(s, testCatalog, 'alfa-beta')).tutorial).toBe('pintar');
   expect(ok(unassignBus(s, testCatalog, id)).tutorial).toBe('pintar');
+});
+
+// Loja realista (fase 2, tarefa 8): ofertas, venda imediata e anúncio.
+test('comprar uma oferta usada cria o ônibus com o ano e a quilometragem dela', () => {
+  const s = ok(buyOffer(rich(), testCatalog, { offerId: 'grande-2020', name: 'Velhinho' }));
+  expect(s.buses[1]).toMatchObject({
+    id: 'bus-2', modelId: 'grande', name: 'Velhinho', year: 2020, odometerKm: 300_000, listing: null,
+    lineId: null, trip: { phase: 'idle' }, driverId: null, livery: 'diagonal',
+  });
+  expect(s.cashCents).toBe(5_000_000 - 4_000_000);
+  expect(s.nextBusNumber).toBe(3);
+  expect(ok(buyOffer(rich(), testCatalog, { offerId: 'grande-2020' })).buses[1]!.name).toBe('Grande #2');
+});
+test('comprar oferta: erros', () => {
+  expect(err(buyOffer(rich(), testCatalog, { offerId: 'fantasma' }))).toBe('oferta_inexistente');
+  expect(err(buyOffer(fresh(), testCatalog, { offerId: 'grande-2020' }))).toBe('saldo_insuficiente');
+  expect(err(buyOffer({ ...rich(), cashCents: -1 }, testCatalog, { offerId: 'mini-novo' }))).toBe('saldo_insuficiente');
+  expect(err(buyOffer(rich(), testCatalog, { offerId: 'mini-novo', name: 'x'.repeat(31) }))).toBe('nome_invalido');
+});
+test('comprar oferta no passo comprar leva o tutorial a pintar', () => {
+  const s = { ...blank(), cashCents: 5_000_000 };
+  expect(ok(buyOffer(s, testCatalog, { offerId: 'grande-2020' })).tutorial).toBe('pintar');
+  expect(ok(buyOffer(at('fim', s), testCatalog, { offerId: 'grande-2020' })).tutorial).toBe('fim');
+});
+test('oferta nova comprada depois da virada do ano sai com o ano do jogo', () => {
+  const s = { ...rich(), clockMinutes: 400 * 1440 };
+  expect(ok(buyOffer(s, testCatalog, { offerId: 'mini-novo' })).buses[1]).toMatchObject({ year: 2027, odometerKm: 0 });
+  expect(ok(buyOffer(s, testCatalog, { offerId: 'grande-2020' })).buses[1]!.year).toBe(2020);
+});
+test('buyBus continua como atalho para a oferta nova do modelo', () => {
+  const s = ok(buyBus({ ...rich(), cashCents: 9_000_000 }, testCatalog, { modelId: 'grande' }));
+  expect(s.buses[1]).toMatchObject({ modelId: 'grande', year: 2026, odometerKm: 0, listing: null });
+  expect(s.cashCents).toBe(3_000_000); // preço do novo, não o do usado
+  expect(err(buyBus(rich(), testCatalog, { modelId: 'grande' }))).toBe('saldo_insuficiente');
+});
+
+const two = () => ok(buyBus(rich(), testCatalog, { modelId: 'mini', name: 'Reserva' })); // bus-1 na linha, bus-2 parado
+test('anunciar: preço entre a venda imediata e 2× o valor justo', () => {
+  const s = two();
+  const bus = s.buses[1]!;
+  const fair = fairValueCents(testCatalog, bus, s.clockMinutes);
+  const now = sellNowCents(testCatalog, bus, s.clockMinutes);
+  expect(fair).toBe(1_700_000);
+  expect(err(listBus(s, testCatalog, bus.id, now - 1))).toBe('preco_invalido');
+  expect(err(listBus(s, testCatalog, bus.id, 2 * fair + 1))).toBe('preco_invalido');
+  expect(err(listBus(s, testCatalog, bus.id, NaN))).toBe('preco_invalido');
+  expect(err(listBus(s, testCatalog, bus.id, Infinity))).toBe('preco_invalido');
+  expect(ok(listBus(s, testCatalog, bus.id, now)).buses[1]!.listing).toEqual({ priceCents: now, sinceMinutes: 0 });
+  const later = { ...s, clockMinutes: 500 };
+  const listed = ok(listBus(later, testCatalog, bus.id, 2 * fair));
+  expect(listed.buses[1]!.listing).toEqual({ priceCents: 2 * fair, sinceMinutes: 500 });
+  expect(listed.cashCents).toBe(s.cashCents);
+  expect(ok(listBus(listed, testCatalog, bus.id, fair)).buses[1]!.listing).toEqual({ priceCents: fair, sinceMinutes: 500 });
+});
+test('anunciar: o único ônibus não pode ser anunciado; ônibus que não existe dá erro', () => {
+  expect(err(listBus(fresh(), testCatalog, 'bus-1', 2_000_000))).toBe('ultimo_onibus');
+  expect(err(listBus(two(), testCatalog, 'fantasma', 2_000_000))).toBe('onibus_inexistente');
+});
+test('retirar o anúncio', () => {
+  const listed = ok(listBus(two(), testCatalog, 'bus-2', 2_000_000));
+  const s = ok(unlistBus(listed, testCatalog, 'bus-2'));
+  expect(s.buses[1]!.listing).toBeNull();
+  expect(ok(unlistBus(s, testCatalog, 'bus-2')).buses[1]!.listing).toBeNull();
+  expect(err(unlistBus(s, testCatalog, 'fantasma'))).toBe('onibus_inexistente');
+});
+test('vender agora um ônibus anunciado paga a venda imediata, não o preço do anúncio', () => {
+  const listed = ok(listBus(two(), testCatalog, 'bus-2', 3_000_000));
+  const s = ok(sellBus(listed, testCatalog, 'bus-2'));
+  expect(s.cashCents).toBe(listed.cashCents + 1_360_000);
 });

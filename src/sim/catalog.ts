@@ -1,13 +1,15 @@
 import citiesJson from '../data/cities.json';
+import dealersJson from '../data/dealers.json';
 import modelsJson from '../data/models.json';
 import roadsJson from '../data/roads.json';
 import { AVG_SPEED_KMH } from '../data/balance';
-import type { BusModel, Catalog, City, CityId, ModelId, Road, RouteId } from './types';
+import type { BusModel, Catalog, City, CityId, Dealer, ModelId, Road, RouteId } from './types';
 
 export const catalog: Catalog = {
   cities: citiesJson as City[],
   models: modelsJson as BusModel[],
   roads: roadsJson as Road[],
+  dealers: dealersJson as Dealer[],
 };
 
 export function routeId(x: CityId, y: CityId): RouteId {
@@ -20,13 +22,6 @@ export function getCity(c: Catalog, id: CityId): City | undefined {
 
 export function getModel(c: Catalog, id: ModelId): BusModel | undefined {
   return c.models.find((model) => model.id === id);
-}
-
-/** O modelo mais barato do catálogo: é com ele que todo jogo começa. */
-export function startModel(c: Catalog): BusModel {
-  const cheapest = [...c.models].sort((x, y) => x.priceCents - y.priceCents)[0];
-  if (!cheapest) throw new Error('catálogo sem modelos');
-  return cheapest;
 }
 
 export function getRoad(c: Catalog, x: CityId, y: CityId): Road | undefined {

@@ -24,3 +24,26 @@ test('comprar pede o nome; cancelar não compra', async () => {
   expect(store.getState().buses).toHaveLength(2);
   expect(store.getState().buses[1]!.name).toMatch(/#2$/);
 });
+test('um cartão por oferta, com novo/usado, ano e km do usado', () => {
+  const { store, el } = setup(); mountShopTab(el, store);
+  expect([...el.querySelectorAll<HTMLElement>('[data-offer]')].map(e => [e.dataset.offer, e.dataset.model])).toEqual([
+    ['mini-novo', 'mini'], ['grande-novo', 'grande'], ['grande-2020', 'grande'],
+  ]);
+  const used = el.querySelector('[data-offer="grande-2020"]')!.textContent!;
+  expect(used).toContain('Grande');
+  expect(used).toContain('Usado');
+  expect(used).toContain('2020');
+  expect(el.querySelector('[data-offer="grande-2020"] [data-spec="km"]')!.textContent).toBe('300.000 km');
+  expect(used).toContain('R$ 40.000');
+  const novo = el.querySelector('[data-offer="grande-novo"]')!;
+  expect(novo.textContent).toContain('Novo');
+  expect(novo.textContent).toContain('R$ 60.000');
+  expect(novo.querySelector('[data-spec="km"]')).toBeNull();
+  expect(novo.querySelector('[data-spec="year"]')).toBeNull();
+});
+test('comprar uma oferta usada traz o ônibus com o ano e a quilometragem dela', async () => {
+  const { store, el } = setup(5_000_000); mountShopTab(el, store);
+  click('[data-offer="grande-2020"] [data-action="buy"]', el); await flush(); click('[data-action="confirm"]'); await flush();
+  expect(store.getState().buses[1]).toMatchObject({ modelId: 'grande', year: 2020, odometerKm: 300_000 });
+  expect(store.getState().cashCents).toBe(1_000_000);
+});

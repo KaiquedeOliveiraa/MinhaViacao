@@ -7,8 +7,9 @@
  */
 import { spawn } from 'node:child_process';
 import { chromium } from '@playwright/test';
-import { assignBus, buyBus, openLine } from '../src/sim/actions';
-import { catalog, nearestCity, startModel } from '../src/sim/catalog';
+import { assignBus, buyOffer, openLine } from '../src/sim/actions';
+import { catalog, nearestCity } from '../src/sim/catalog';
+import { cheapestOffer } from '../src/sim/market';
 import { createGame } from '../src/sim/newGame';
 import { serialize } from '../src/save/schema';
 import { testCompany } from '../src/sim/testkit';
@@ -24,7 +25,7 @@ function gameWithBus(): GameState {
   let s = createGame(catalog, { ...testCompany, hqCityId: 'blumenau' });
   if (s.buses.length === 0) {
     s = { ...s, cashCents: 100_000_000 };
-    const bought = buyBus(s, catalog, { modelId: startModel(catalog).id });
+    const bought = buyOffer(s, catalog, { offerId: cheapestOffer(catalog).id });
     if (bought.ok) s = bought.state;
   }
   if (s.lines.length === 0) {

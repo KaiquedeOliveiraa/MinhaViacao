@@ -34,7 +34,7 @@ test('importar entrega o arquivo escolhido', () => {
 });
 test('bloco No jogo conta o que o catálogo tem', () => {
   const nums = [...renderStatsBlock(catalog).querySelectorAll('.stat-num')].map(n => n.textContent);
-  expect(nums).toEqual(['4', '6', '3', '4']);
+  expect(nums).toEqual(['4', '6', '6', '4']);
 });
 test('cartão de instalação traz o aviso obrigatório do iPhone', () => {
   expect(renderInstallCard().textContent).toContain('No iPhone, o aplicativo guarda o jogo separado do navegador. Exporte seu jogo antes e importe no aplicativo.');

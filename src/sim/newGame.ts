@@ -76,7 +76,7 @@ export function createGame(c: Catalog, input: CompanyInput): GameState {
   const company: Company = { ...input, name: input.name.trim(), logo: { ...input.logo } };
   // sem ônibus e sem linhas: o tutorial guia a compra, a pintura e a primeira linha (que não paga taxa)
   return {
-    version: 2,
+    version: 3,
     company,
     cashCents: START_CASH_CENTS,
     clockMinutes: 0,

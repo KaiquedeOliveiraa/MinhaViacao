@@ -2,7 +2,7 @@ import type { Store } from '../game/store';
 import { renameBus, sellBus, setBusLivery } from '../sim/actions';
 import { getModel } from '../sim/catalog';
 import { LIVERY_STYLES } from '../sim/newGame';
-import { sellValueCents } from '../sim/selectors';
+import { sellNowCents } from '../sim/market';
 import type { ActionResult, Bus, GameState, LiveryStyle } from '../sim/types';
 import { busSvg, liveryThumb } from './busSvg';
 import { confirmDialog, promptDialog } from './dialog';
@@ -30,7 +30,7 @@ export function mountGarageTab(el: HTMLElement, store: Store): () => void {
   function card(s: GameState, bus: Bus): HTMLElement {
     const model = getModel(c, bus.modelId);
     const line = s.lines.find((l) => l.id === bus.lineId);
-    const value = sellValueCents(c, bus);
+    const value = sellNowCents(c, bus, s.clockMinutes);
     const isLast = s.buses.length <= 1;
     const sell = h('button', {
       type: 'button', class: 'btn btn-light btn-compact', dataset: { action: 'sell' }, disabled: isLast, title: isLast ? LAST_BUS_MESSAGE : null,

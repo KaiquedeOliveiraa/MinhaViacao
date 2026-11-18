@@ -12,7 +12,7 @@ test('um cartão por ônibus, com desenho, selo e valor de venda', () => {
   expect(el.querySelector('[data-bus="bus-1"]')!.textContent).toContain('Alfa ⇄ Beta');
   expect(el.querySelector('[data-bus="bus-2"]')!.textContent).toContain('Parado');
   expect(el.querySelector('[data-bus="bus-2"] svg [data-region="body"]')!.getAttribute('fill')).toBe(testCompany.primaryColor);
-  expect(el.querySelector('[data-bus="bus-2"] [data-action="sell"]')!.textContent).toBe('Vender por R$ 10.000');
+  expect(el.querySelector('[data-bus="bus-2"] [data-action="sell"]')!.textContent).toBe('Vender por R$ 13.600'); // 80% do valor justo do novo (85% do preço)
 });
 test('sem ônibus, a Garagem diz para comprar na Loja', () => {
   const { store, el } = setup(5_000_000); store.replace({ ...store.getState(), buses: [], lines: [] }); mountGarageTab(el, store);
@@ -43,5 +43,5 @@ test('renomear e vender passam pelas janelas', async () => {
   expect(el.querySelector('[data-bus="bus-2"] b')).toBeNull();                 // aparece como texto
   click('[data-bus="bus-2"] [data-action="sell"]', el); await flush(); click('[data-action="confirm"]'); await flush();
   expect(store.getState().buses).toHaveLength(1);
-  expect(store.getState().cashCents).toBe(3_000_000 + 1_000_000);
+  expect(store.getState().cashCents).toBe(3_000_000 + 1_360_000); // 80% do valor justo do novo (85% do preço)
 });

@@ -1,8 +1,9 @@
-import { MAX_NAME_LENGTH } from '../data/balance';
+import { LISTING_MAX_FACTOR, MAX_NAME_LENGTH } from '../data/balance';
 import { getCity, getModel, getRoad, routeId } from './catalog';
 import { baseRefPriceCents, priceBoundsCents } from './demand';
+import { allOffers, fairValueCents, gameYear, getOffer, sellNowCents } from './market';
 import { isValidLivery, newLine, validateCompanyInput } from './newGame';
-import { openFeeForStateCents, sellValueCents, servedCities } from './selectors';
+import { openFeeForStateCents, servedCities } from './selectors';
 import type {
   ActionError, ActionResult, Bus, BusId, Catalog, CityId, Company, GameState, LiveryStyle, ModelId, RouteId,
 } from './types';
@@ -25,31 +26,68 @@ function busNumber(bus: Bus): string {
   return bus.id.replace(/^bus-/, '');
 }
 
-export function buyBus(s: GameState, c: Catalog, input: { modelId: ModelId; name?: string }): ActionResult {
-  const model = getModel(c, input.modelId);
+/** Compra uma oferta de loja (estoque ilimitado). O novo sai com o ano do jogo; o usado, com o ano e os km da oferta. */
+export function buyOffer(s: GameState, c: Catalog, input: { offerId: string; name?: string }): ActionResult {
+  const offer = getOffer(c, input.offerId);
+  if (!offer) return fail('oferta_inexistente');
+  const model = getModel(c, offer.modelId);
   if (!model) return fail('modelo_inexistente');
   const name = cleanName(input.name);
   if (name === null) return fail('nome_invalido');
-  if (s.cashCents < 0 || s.cashCents < model.priceCents) return fail('saldo_insuficiente');
+  if (s.cashCents < 0 || s.cashCents < offer.priceCents) return fail('saldo_insuficiente');
   const next = structuredClone(s);
   const number = next.nextBusNumber;
   next.buses.push({
     id: `bus-${number}`, modelId: model.id, name: name || `${model.name} #${number}`,
     livery: next.company.defaultLivery, lineId: null, trip: { phase: 'idle' }, driverId: null,
+    year: offer.condition === 'novo' ? Math.max(offer.year, gameYear(s.clockMinutes)) : offer.year,
+    odometerKm: offer.odometerKm, listing: null,
   });
   next.nextBusNumber = number + 1;
-  next.cashCents -= model.priceCents;
+  next.cashCents -= offer.priceCents;
   if (next.tutorial === 'comprar') next.tutorial = 'pintar';
   return done(next);
 }
 
+/** Atalho: compra a oferta nova do modelo. */
+export function buyBus(s: GameState, c: Catalog, input: { modelId: ModelId; name?: string }): ActionResult {
+  const offer = allOffers(c).find((o) => o.modelId === input.modelId && o.condition === 'novo');
+  if (!offer || !getModel(c, input.modelId)) return fail('modelo_inexistente');
+  return buyOffer(s, c, { offerId: offer.id, name: input.name });
+}
+
+/** Venda imediata pelo valor de `sellNowCents`; um anúncio do ônibus some junto. */
 export function sellBus(s: GameState, c: Catalog, busId: BusId): ActionResult {
   const bus = s.buses.find((b) => b.id === busId);
   if (!bus) return fail('onibus_inexistente');
   if (s.buses.length <= 1) return fail('ultimo_onibus');
   const next = structuredClone(s);
   next.buses = next.buses.filter((b) => b.id !== busId);
-  next.cashCents += sellValueCents(c, bus);
+  next.cashCents += sellNowCents(c, bus, s.clockMinutes);
+  return done(next);
+}
+
+/** Anuncia o ônibus (ou troca o preço do anúncio): entre a venda imediata e 2× o valor justo. */
+export function listBus(s: GameState, c: Catalog, busId: BusId, priceCents: number): ActionResult {
+  const index = s.buses.findIndex((b) => b.id === busId);
+  if (index < 0) return fail('onibus_inexistente');
+  if (s.buses.length <= 1) return fail('ultimo_onibus');
+  const bus = s.buses[index]!;
+  const price = Math.round(priceCents);
+  const min = sellNowCents(c, bus, s.clockMinutes);
+  const max = LISTING_MAX_FACTOR * fairValueCents(c, bus, s.clockMinutes);
+  if (!Number.isFinite(price) || price < min || price > max || price < 1) return fail('preco_invalido');
+  const next = structuredClone(s);
+  const listed = next.buses[index]!;
+  listed.listing = { priceCents: price, sinceMinutes: bus.listing?.sinceMinutes ?? s.clockMinutes };
+  return done(next);
+}
+
+export function unlistBus(s: GameState, _c: Catalog, busId: BusId): ActionResult {
+  const index = s.buses.findIndex((b) => b.id === busId);
+  if (index < 0) return fail('onibus_inexistente');
+  const next = structuredClone(s);
+  next.buses[index]!.listing = null;
   return done(next);
 }
 

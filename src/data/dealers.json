@@ -1,0 +1,25 @@
+[
+  {
+    "id": "central",
+    "name": "Garagem Central",
+    "cityId": null,
+    "lat": null,
+    "lng": null,
+    "offers": [
+      { "id": "van-novo", "modelId": "van", "condition": "novo", "year": 2026, "odometerKm": 0, "priceCents": 3800000 },
+      { "id": "van-2019", "modelId": "van", "condition": "usado", "year": 2019, "odometerKm": 210000, "priceCents": 2200000 },
+      { "id": "micro-novo", "modelId": "micro", "condition": "novo", "year": 2026, "odometerKm": 0, "priceCents": 5500000 },
+      { "id": "micro-2020", "modelId": "micro", "condition": "usado", "year": 2020, "odometerKm": 260000, "priceCents": 3300000 },
+      { "id": "micro-2012", "modelId": "micro", "condition": "usado", "year": 2012, "odometerKm": 480000, "priceCents": 2000000 },
+      { "id": "micro32-novo", "modelId": "micro32", "condition": "novo", "year": 2026, "odometerKm": 0, "priceCents": 7500000 },
+      { "id": "micro32-2018", "modelId": "micro32", "condition": "usado", "year": 2018, "odometerKm": 340000, "priceCents": 3900000 },
+      { "id": "conv-novo", "modelId": "conv", "condition": "novo", "year": 2026, "odometerKm": 0, "priceCents": 12000000 },
+      { "id": "conv-2021", "modelId": "conv", "condition": "usado", "year": 2021, "odometerKm": 230000, "priceCents": 7800000 },
+      { "id": "conv-2015", "modelId": "conv", "condition": "usado", "year": 2015, "odometerKm": 620000, "priceCents": 4800000 },
+      { "id": "rodo-novo", "modelId": "rodo", "condition": "novo", "year": 2026, "odometerKm": 0, "priceCents": 17000000 },
+      { "id": "rodo-2017", "modelId": "rodo", "condition": "usado", "year": 2017, "odometerKm": 700000, "priceCents": 7200000 },
+      { "id": "rodo42-novo", "modelId": "rodo42", "condition": "novo", "year": 2026, "odometerKm": 0, "priceCents": 21000000 },
+      { "id": "rodo42-2022", "modelId": "rodo42", "condition": "usado", "year": 2022, "odometerKm": 390000, "priceCents": 13500000 }
+    ]
+  }
+]

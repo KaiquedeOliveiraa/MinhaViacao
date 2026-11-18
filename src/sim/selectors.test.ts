@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import { createGame, emptyDayStats } from './newGame';
-import { lineOccupancy, lineProfitTodayCents, openableRoutes, openFeeCents, openFeeForStateCents, sellValueCents, servedCities } from './selectors';
+import { lineOccupancy, lineProfitTodayCents, openableRoutes, openFeeCents, openFeeForStateCents, servedCities } from './selectors';
 import { startedGame, testCatalog, testCompany } from './testkit';
 import { advance } from './tick';
 
@@ -16,7 +16,6 @@ test('lotação e lucro do dia', () => {
   expect(lineOccupancy({ ...line, today: emptyDayStats(), yesterday: emptyDayStats() })).toBeNull();
   expect(lineOccupancy(line)).toBe(line.today.passengers / line.today.seatsOffered);
   expect(lineProfitTodayCents(s, line)).toBe(line.today.revenueCents - line.today.dieselCents - 17_500);
-  expect(sellValueCents(testCatalog, s.buses[0]!)).toBe(1_000_000);
 });
 test('a primeira linha da viação não paga taxa; depois dela, paga', () => {
   const s = createGame(testCatalog, testCompany);

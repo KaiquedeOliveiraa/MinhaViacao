@@ -19,9 +19,9 @@ test('routeId é o mesmo nos dois sentidos', () => {
   expect(routeId('ibirama', 'blumenau')).toBe('blumenau-ibirama');
   expect(routeId('blumenau', 'ibirama')).toBe('blumenau-ibirama');
 });
-test('existem 4 cidades, 3 modelos e 6 rodovias', () => {
+test('existem 4 cidades, 6 modelos e 6 rodovias', () => {
   expect(catalog.cities).toHaveLength(4);
-  expect(catalog.models).toHaveLength(3);
+  expect(catalog.models).toHaveLength(6);
   expect(catalog.roads).toHaveLength(6);
 });
 test('cada rodovia começa e termina a menos de 2 km das suas cidades', () => {

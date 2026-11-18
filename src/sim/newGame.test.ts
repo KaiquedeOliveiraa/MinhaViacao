@@ -4,7 +4,7 @@ import { startedGame, testCatalog, testCompany } from './testkit';
 
 test('jogo novo começa sem ônibus e sem linhas, com R$ 35.000 e o tutorial no passo comprar', () => {
   const s = createGame(testCatalog, testCompany);
-  expect(s.version).toBe(2);
+  expect(s.version).toBe(3);
   expect(s.tutorial).toBe('comprar');
   expect(s.cashCents).toBe(3_500_000);
   expect(s.clockMinutes).toBe(0);

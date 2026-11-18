@@ -1,6 +1,9 @@
 import { expect, test } from 'vitest';
+import { buyBus, listBus } from './actions';
+import { hash01 } from './market';
 import { startedGame, testCatalog } from './testkit';
 import { advance } from './tick';
+import type { ActionResult, GameState } from './types';
 
 const fresh = () => startedGame(testCatalog);
 
@@ -68,4 +71,79 @@ test('foco de revisão: nos extremos de preço, 10 dias depois o caixa segue int
     expect(Number.isFinite(end.lines[0]!.queueA)).toBe(true);
     expect(end.clockMinutes).toBe(14_400);
   }
+});
+
+// Loja realista (fase 2, tarefa 8): odômetro e venda por anúncio.
+
+const ok = (r: ActionResult): GameState => { if (!r.ok) throw new Error(r.error); return r.state; };
+/** Valor justo do mini novo, sem km: 85% do preço. */
+const FAIR = 1_700_000;
+/** bus-1 na linha alfa-beta, bus-2 (mini novo) parado na garagem. */
+const withSpare = () => ok(buyBus({ ...fresh(), cashCents: 5_000_000 }, testCatalog, { modelId: 'mini' }));
+/** Primeira hora cheia, a partir de `from`, em que o sorteio de `busId` sai abaixo de `chance`. */
+const saleHour = (busId: string, chance: number, from = 1) => {
+  for (let h = from; h < from + 500; h++) if (hash01(`${busId}:${h}`) < chance) return h;
+  throw new Error('sem hora de venda');
+};
+
+test('o odômetro sobe a distância da rodovia a cada viagem que chega', () => {
+  expect(advance(fresh(), testCatalog, 60).buses[0]!.odometerKm).toBe(0);
+  expect(advance(fresh(), testCatalog, 61).buses[0]!.odometerKm).toBe(60);
+  expect(advance(fresh(), testCatalog, 131).buses[0]!.odometerKm).toBe(60);
+  expect(advance(fresh(), testCatalog, 132).buses[0]!.odometerKm).toBe(120);
+});
+
+test('anúncio no valor justo vende em 3 dias; o caixa recebe o preço uma vez', () => {
+  const listed = ok(listBus(withSpare(), testCatalog, 'bus-2', FAIR));
+  const control = advance(withSpare(), testCatalog, 3 * 1440);
+  const end = advance(listed, testCatalog, 3 * 1440);
+  expect(end.buses.map((b) => b.id)).toEqual(['bus-1']);
+  const h = saleHour('bus-2', 0.25);
+  expect(h).toBeLessThanOrEqual(72);
+  // depois da venda o bus-2 deixa de pagar o custo fixo das viradas de dia (a venda vem antes do custo do dia)
+  const midnightsAfter = [1, 2, 3].filter((d) => d * 24 >= h).length;
+  expect(end.cashCents).toBe(control.cashCents + FAIR + 35_000 * midnightsAfter);
+});
+
+test('anúncio a 1,15× o valor justo nunca vende', () => {
+  const listed = ok(listBus(withSpare(), testCatalog, 'bus-2', 1_955_000));
+  const end = advance(listed, testCatalog, 3 * 1440);
+  expect(end.buses.map((b) => b.id)).toEqual(['bus-1', 'bus-2']);
+  expect(end.buses[1]!.listing).toEqual({ priceCents: 1_955_000, sinceMinutes: 0 });
+});
+
+test('ônibus anunciado vendido em viagem perde a viagem e não gera receita depois', () => {
+  const h = saleHour('bus-1', 0.25, 30);
+  const s = ok(listBus(withSpare(), testCatalog, 'bus-1', FAIR));
+  s.clockMinutes = h * 60 - 30;
+  s.buses[0]!.trip = { phase: 'moving', from: 'a', progress: 0.2, passengers: 10, fareCents: 2600 };
+  const end = advance(s, testCatalog, 1440);
+  expect(end.buses.map((b) => b.id)).toEqual(['bus-2']);
+  expect(end.cashCents).toBe(s.cashCents + FAIR - 35_000); // só o custo fixo do bus-2 parado
+  expect(end.lines[0]!.today.revenueCents + end.lines[0]!.yesterday.revenueCents).toBe(0);
+});
+
+test('anúncio só é sorteado na hora cheia', () => {
+  const h = saleHour('bus-2', 0.25);
+  const listed = ok(listBus(withSpare(), testCatalog, 'bus-2', FAIR));
+  expect(advance(listed, testCatalog, h * 60 - 1).buses).toHaveLength(2);
+  expect(advance(listed, testCatalog, h * 60).buses).toHaveLength(1);
+});
+
+test('com a venda no meio, avançar em pedaços dá o mesmo resultado que avançar de uma vez', () => {
+  const listed = ok(listBus(withSpare(), testCatalog, 'bus-1', FAIR));
+  const once = advance(listed, testCatalog, 3 * 1440);
+  let chunks = listed;
+  for (let i = 0; i < 3 * 1440; i += 97) chunks = advance(chunks, testCatalog, Math.min(97, 3 * 1440 - i));
+  expect(chunks).toEqual(once);
+  expect(once.buses.map((b) => b.id)).toEqual(['bus-2']);
+});
+
+test('dois ônibus anunciados podem vender os dois: a frota fica vazia sem erro', () => {
+  let s = ok(listBus(withSpare(), testCatalog, 'bus-1', FAIR));
+  s = ok(listBus(s, testCatalog, 'bus-2', FAIR));
+  const end = advance(s, testCatalog, 3 * 1440);
+  expect(end.buses).toEqual([]);
+  expect(Number.isInteger(end.cashCents)).toBe(true);
+  expect(advance(end, testCatalog, 1440).cashCents).toBe(end.cashCents); // sem frota, sem custo fixo
 });

@@ -13,8 +13,19 @@ export const QUEUE_MAX_HOURS = 3;
 export const INITIAL_QUEUE_HOURS = 1;
 export const DIESEL_CENTS_PER_LITER = 600;
 export const DAILY_FIXED_CENTS_PER_BUS = 35_000;   // calibrar
-export const START_CASH_CENTS = 3_500_000;         // micro usado (R$ 20.000) + os R$ 15.000 do MVP
-export const SELL_FRACTION = 0.5;
+export const START_CASH_CENTS = 3_500_000;         // micro usado 2012 (R$ 20.000) + os R$ 15.000 do MVP
 export const OPEN_FEE_CENTS_PER_PASSENGER = 5_000; // calibrar
-// o jogo começa sem ônibus; a calibração mede o começo com o modelo mais barato: startModel() em catalog.ts
+// o jogo começa sem ônibus; a calibração mede o começo com a oferta mais barata: cheapestOffer() em market.ts
 export const MAX_NAME_LENGTH = 30;
+
+// Mercado de veículos: valor justo = preço do novo × 0,85 × max(piso, 0,9^idade) × max(piso, 1 − km/1.500.000)
+export const GAME_START_YEAR = 2026;
+export const DRIVE_OFF_FACTOR = 0.85;   // todo ônibus perde 15% ao sair da loja (sem lucro comprando e anunciando)
+export const DEPRECIATION_PER_YEAR = 0.9;
+export const AGE_VALUE_FLOOR = 0.3;
+export const KM_FULL_WEAR = 1_500_000;
+export const KM_VALUE_FLOOR = 0.6;
+export const SELL_NOW_FRACTION = 0.8;   // venda imediata: 80% do valor justo
+export const LISTING_MAX_FACTOR = 2;    // anúncio vai da venda imediata até 2× o valor justo
+export const SALE_CHANCE_AT_FAIR = 0.25; // chance por hora cheia com preço até o valor justo
+export const SALE_MAX_RATIO = 1.15;     // a partir de 1,15× o valor justo, o anúncio não vende

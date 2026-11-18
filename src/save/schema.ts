@@ -2,11 +2,11 @@ import { MAX_NAME_LENGTH } from '../data/balance';
 import { getCity, getModel, getRoad, routeId } from '../sim/catalog';
 import { isValidLivery, validateCompanyInput } from '../sim/newGame';
 import type {
-  Bus, Catalog, Company, DayStats, End, GameState, Line, LiveryStyle, LogoIconId, LogoRef, Trip, TutorialStep,
+  Bus, Catalog, Company, DayStats, End, GameState, Line, Listing, LiveryStyle, LogoIconId, LogoRef, Trip, TutorialStep,
 } from '../sim/types';
 import { migrate } from './migrate';
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 export const MAX_BUSES = 500;
 export type ParseError = 'formato' | 'versao_futura' | 'referencia';
 export type ParseResult = { ok: true; state: GameState } | { ok: false; error: ParseError };
@@ -97,6 +97,12 @@ function readTrip(v: unknown, seats: number): Trip {
   }
 }
 
+function readListing(v: unknown): Listing | null {
+  if (v === null) return null;
+  const o = obj(v);
+  return { priceCents: int(o.priceCents, 1), sinceMinutes: int(o.sinceMinutes, 0) };
+}
+
 function readBus(v: unknown, c: Catalog, lineIds: Set<string>): Bus {
   const o = obj(v);
   const id = str(o.id);
@@ -113,7 +119,12 @@ function readBus(v: unknown, c: Catalog, lineIds: Set<string>): Bus {
   if ((trip.phase === 'idle') !== (lineId === null)) bad();
   const driverId = o.driverId === null ? null : str(o.driverId);
   if (driverId !== null && (driverId.length === 0 || driverId.length > 40)) bad();
-  return { id, modelId, name, livery: livery as LiveryStyle, lineId, trip, driverId };
+  const year = int(o.year, 1900);
+  if (year > 9999) bad();
+  return {
+    id, modelId, name, livery: livery as LiveryStyle, lineId, trip, driverId,
+    year, odometerKm: int(o.odometerKm, 0), listing: readListing(o.listing),
+  };
 }
 
 const TUTORIAL_STEPS: readonly TutorialStep[] = ['comprar', 'pintar', 'linha', 'fim'];
