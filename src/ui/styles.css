@@ -419,3 +419,81 @@
   }
   .create-actions .btn { min-width: 180px; }
 }
+
+/* ---------- tela do jogo ---------- */
+.game-screen {
+  height: 100dvh;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: 'top' 'map';
+  overflow: hidden;
+}
+.game-top {
+  grid-area: top;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: env(safe-area-inset-top) max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left));
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+.game-name { flex: 1; min-width: 0; font-family: var(--font-display); font-weight: 800; font-size: 22px; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cash { font-family: var(--font-display); font-weight: 800; font-size: 24px; color: var(--money-up); }
+.cash.is-negative { color: var(--money-down); }
+.game-map { grid-area: map; position: relative; min-height: 0; }
+.game-panel { display: none; }
+
+@media (min-width: 900px) {
+  .game-screen {
+    grid-template-columns: minmax(0, 1fr) 380px;
+    grid-template-areas: 'top top' 'map panel';
+  }
+  .game-panel { display: block; grid-area: panel; border-left: 1px solid var(--border); background: var(--surface); overflow-y: auto; }
+}
+
+/* ---------- mapa (Leaflet) ---------- */
+.map-root { position: absolute; inset: 0; background: var(--bg); }
+.map-root .leaflet-container { background: var(--bg); font-family: var(--font-body); }
+.map-road { stroke: var(--border); stroke-opacity: 0.6; stroke-width: 2px; fill: none; }
+.map-road.is-line { stroke-opacity: 1; stroke-width: 4px; stroke-linecap: round; }
+.map-road.is-paused { stroke-dasharray: 8 8; }
+.map-city { fill: var(--surface-2); stroke: var(--text-dim); }
+.map-city.is-served { fill: var(--accent); stroke: var(--text); }
+.map-city-ring { stroke: var(--accent); }
+.leaflet-tooltip.map-label {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  color: var(--text);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 3px var(--bg), 0 0 8px var(--bg);
+}
+.leaflet-tooltip.map-label::before { display: none; }
+.bus-marker { background: none; border: 0; }
+.map-root:not(.is-zooming) .bus-marker { transition: transform var(--bus-step, 1000ms) linear; }
+.bus-marker-body {
+  position: relative;
+  width: 28px;
+  height: 12px;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1.5px var(--bg), 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+.bus-marker-stripe { position: absolute; left: 0; right: 0; top: 5px; height: 3px; }
+.map-popup .leaflet-popup-content-wrapper { background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
+.map-popup .leaflet-popup-tip { background: var(--surface); }
+.map-popup .leaflet-popup-content { margin: 12px 14px; font-size: 14px; line-height: 1.45; }
+.map-popup a.leaflet-popup-close-button { color: var(--text-dim); width: 32px; height: 32px; font-size: 20px; line-height: 30px; }
+.popup-body { display: grid; gap: 2px; }
+.popup-title { font-size: 15px; padding-right: 18px; overflow-wrap: anywhere; }
+.popup-tag { justify-self: start; margin: 2px 0; padding: 1px 8px; border-radius: 999px; font-size: 12px; background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--text); }
+.map-root .leaflet-control-attribution { background: color-mix(in srgb, var(--bg) 75%, transparent); color: var(--text-dim); font-size: 11px; }
+.map-root .leaflet-control-attribution a { color: var(--text-dim); }
+.map-root .leaflet-bar a { background: var(--surface); color: var(--text); border-color: var(--border); width: 36px; height: 36px; line-height: 36px; }

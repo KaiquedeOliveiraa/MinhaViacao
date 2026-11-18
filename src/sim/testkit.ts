@@ -27,3 +27,10 @@ export const testCompany: Company = {
   logo: { kind: 'icon', iconId: 'bus' },
   defaultLivery: 'diagonal',
 };
+
+/** Armazenamento em memória com a forma do localStorage, para os testes. */
+export interface MemoryKv { data: Map<string, string>; getItem(k: string): string | null; setItem(k: string, v: string): void; removeItem(k: string): void; }
+export function memoryKv(): MemoryKv {
+  const data = new Map<string, string>();
+  return { data, getItem: (k) => data.get(k) ?? null, setItem: (k, v) => void data.set(k, v), removeItem: (k) => void data.delete(k) };
+}

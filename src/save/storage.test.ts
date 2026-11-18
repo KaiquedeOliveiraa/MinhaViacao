@@ -1,11 +1,10 @@
 import { expect, test } from 'vitest';
 import { createGame } from '../sim/newGame';
-import { testCatalog, testCompany } from '../sim/testkit';
+import { memoryKv as memory, testCatalog, testCompany } from '../sim/testkit';
 import { advance } from '../sim/tick';
 import { serialize } from './schema';
-import { BACKUP_KEY, createStorage, SAVE_KEY, type KeyValue } from './storage';
+import { BACKUP_KEY, createStorage, SAVE_KEY } from './storage';
 
-const memory = (): KeyValue & { data: Map<string, string> } => { const data = new Map<string, string>(); return { data, getItem: k => data.get(k) ?? null, setItem: (k, v) => void data.set(k, v), removeItem: k => void data.delete(k) }; };
 const s1 = () => createGame(testCatalog, testCompany);
 const s2 = () => advance(s1(), testCatalog, 300);
 

@@ -3,6 +3,9 @@ import type { ParseError } from '../save/schema';
 import type { SaveStorage } from '../save/storage';
 import type { Catalog, GameState } from '../sim/types';
 import { renderSiteHeader } from './brand';
+import { createLoop } from '../game/loop';
+import { createStore } from '../game/store';
+import { mountMap } from '../map/mapView';
 import { createGame } from '../sim/newGame';
 import { busSvg } from './busSvg';
 import { renderCreateCompany } from './createCompany';
@@ -82,24 +85,53 @@ export function mountApp(root: HTMLElement, deps: AppDeps): { go(screen: Screen)
     });
   }
 
-  /** Provisório: as tarefas 13 a 16 substituem esta tela. */
-  function renderGamePlaceholder(): HTMLElement {
-    return h('div', { class: 'start-page' },
-      renderSiteHeader(),
-      h('main', { class: 'placeholder' },
-        h('section', { class: 'card card-stripe' },
-          h('h2', { class: 'title' }, saved?.company.name ?? 'Jogo'),
-          h('p', { class: 'muted' }, `Caixa: ${formatMoney(saved?.cashCents ?? 0)}`),
-          h('div', { class: 'btn-stack' }, h('button', { class: 'btn btn-light', type: 'button', onClick: () => go('start') }, 'Voltar')),
-        ),
+  /** Tela do jogo: cria o store e o laço; devolve a função que desmonta tudo. */
+  function mountGame(state: GameState): () => void {
+    const store = createStore(deps.catalog, state);
+    const cash = h('span', { class: 'cash', dataset: { live: 'cash' } });
+    const updateCash = () => {
+      const cents = store.getState().cashCents;
+      cash.textContent = formatMoney(cents);
+      cash.classList.toggle('is-negative', cents < 0);
+    };
+    const mapSlot = h('div', { class: 'game-map' });
+    const view = h('div', { class: 'game-screen' },
+      h('header', { class: 'game-top' },
+        h('button', { type: 'button', class: 'btn btn-ghost btn-compact', onClick: () => go('start') }, 'Sair'),
+        h('span', { class: 'game-name' }, store.getState().company.name),
+        cash,
       ),
+      mapSlot,
+      h('aside', { class: 'game-panel' }),
     );
+    root.replaceChildren(view);
+    updateCash();
+    const offTick = store.on('tick', updateCash);
+    const offChange = store.on('change', updateCash);
+    const unmountMap = mountMap(mapSlot, store);
+    const loop = createLoop(store);
+    loop.start();
+    return () => {
+      loop.stop();
+      offTick();
+      offChange();
+      unmountMap();
+      saved = store.getState();
+      deps.storage.save(saved);
+    };
   }
 
+  let teardown: (() => void) | null = null;
+
   function go(screen: Screen) {
+    teardown?.();
+    teardown = null;
     if (screen !== 'create') applyTheme(document.documentElement, screen === 'start' ? null : saved?.company ?? null);
-    const view = screen === 'start' ? renderStart() : screen === 'create' ? renderCreate() : renderGamePlaceholder();
-    root.replaceChildren(view);
+    if (screen === 'game' && saved) {
+      teardown = mountGame(saved);
+    } else {
+      root.replaceChildren(screen === 'create' ? renderCreate() : renderStart());
+    }
     window.scrollTo?.(0, 0);
   }
 
