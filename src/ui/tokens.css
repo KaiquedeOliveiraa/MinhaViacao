@@ -9,6 +9,14 @@
   --money-up: #10B981;   /* só para dinheiro */
   --money-down: #EF4444; /* só para dinheiro */
 
+  /* mapa próprio (o canvas lê com getComputedStyle) */
+  --map-sea: #0b0911;           /* mar e tudo fora de SC */
+  --map-land: #24202c;          /* municípios de SC */
+  --map-land-edge: #3a3445;     /* divisa entre municípios */
+  --map-neighbor-edge: #8a8398; /* contorno de PR, RS e Argentina (desenhado com opacidade 0,5) */
+  --map-highway: #575064;       /* rodovias BR e SC do fundo */
+  --map-town: #6f6880;          /* sedes municipais */
+
   /* cor da empresa (theme.ts sobrescreve) */
   --accent: #8b7cf6;
   --on-accent: #000000;

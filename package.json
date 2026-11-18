@@ -10,6 +10,7 @@
     "roads": "tsx scripts/generate-roads.ts",
     "map": "tsx scripts/generate-map.ts",
     "calibrate": "tsx scripts/calibrate.ts",
+    "measure:map": "tsx scripts/measure-map.ts",
     "e2e": "playwright test"
   },
   "dependencies": {

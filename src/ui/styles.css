@@ -654,9 +654,10 @@
 }
 
 /* ---------- mapa (Leaflet) ---------- */
-.map-root { position: absolute; inset: 0; background: var(--bg); }
-.map-root .leaflet-container { background: var(--bg); font-family: var(--font-body); }
-.map-road { stroke: var(--border); stroke-opacity: 0.6; stroke-width: 2px; fill: none; }
+.map-root { position: absolute; inset: 0; background: var(--map-sea); }
+/* .map-root é o próprio contêiner do Leaflet; dois seletores para vencer o fundo cinza do leaflet.css */
+.map-root.leaflet-container { background: var(--map-sea); font-family: var(--font-body); }
+.map-road { stroke: var(--text-dim); stroke-opacity: 0.45; stroke-width: 2px; fill: none; }
 .map-road.is-line { stroke-opacity: 1; stroke-width: 4px; stroke-linecap: round; }
 .map-road.is-paused { stroke-dasharray: 8 8; }
 .map-city { fill: var(--surface-2); stroke: var(--text-dim); }
@@ -694,7 +695,7 @@
 .popup-body { display: grid; gap: 2px; }
 .popup-title { font-size: 15px; padding-right: 18px; overflow-wrap: anywhere; }
 .popup-tag { justify-self: start; margin: 2px 0; padding: 1px 8px; border-radius: 999px; font-size: 12px; background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--text); }
-.map-root .leaflet-control-attribution { background: color-mix(in srgb, var(--bg) 75%, transparent); color: var(--text-dim); font-size: 11px; }
+.map-root.leaflet-container .leaflet-control-attribution { background: color-mix(in srgb, var(--bg) 75%, transparent); color: var(--text-dim); font-size: 11px; }
 .map-root .leaflet-control-attribution a { color: var(--text-dim); }
 .map-root .leaflet-bar a { background: var(--surface); color: var(--text); border-color: var(--border); width: 36px; height: 36px; line-height: 36px; }
 

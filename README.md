@@ -64,7 +64,13 @@ O site usa caminhos relativos (`base: './'`), então funciona em `https://<usuar
 
 **Rodovias:** traçados gerados com o serviço público do [OSRM](https://project-osrm.org/) (`npm run roads`), sobre dados © colaboradores do OpenStreetMap.
 
-**Mapa-base:** Esri World Dark Gray Base — "Sources: Esri, HERE, Garmin, © OpenStreetMap contributors, and the GIS user community". A atribuição aparece no canto do mapa. A CARTO, escolha original do plano, passou a exigir chave de API em 2026. **Antes de publicar, confirmar nos termos de uso da Esri que um jogo gratuito e público pode usar esses tiles**; se não puder, trocar o objeto `BASEMAP` em `src/map/mapView.ts` (por exemplo, Stadia Maps, que pede cadastro do domínio).
+**Mapa:** desenhado pelo próprio jogo, em vetor, sem tiles de terceiros. Os arquivos ficam em `public/map/` e são gerados por `npm run map` (o jogo nunca consulta esses serviços):
+
+- `sc-municipios.json` e `vizinhos.json` (Paraná e Rio Grande do Sul): malhas municipais e estaduais (API de malhas v3) e nomes dos municípios (API de localidades) do [IBGE](https://www.ibge.gov.br/). O ponto de cada município fica no centro do polígono, não no endereço exato da sede.
+- `vizinhos.json` (Argentina): [Natural Earth](https://www.naturalearthdata.com/) 1:50m, domínio público.
+- `rodovias.json`: rodovias BR e SC do [OpenStreetMap](https://www.openstreetmap.org/copyright), consultadas pela Overpass API. © colaboradores do OpenStreetMap; este arquivo é um banco de dados derivado e fica sob a [ODbL](https://opendatacommons.org/licenses/odbl/).
+
+A atribuição aparece no canto do mapa. `npm run measure:map` mede o mapa num celular simulado (CPU 4× mais lenta, 390×844) e imprime quadros por segundo, quadros lentos e bytes baixados; requer `npm run build` antes e aceita `PW_CHANNEL`.
 
 **Mapa interativo:** [Leaflet](https://leafletjs.com/) (BSD-2). **Fontes:** Inter e Barlow Condensed (SIL Open Font License), via Fontsource.
 

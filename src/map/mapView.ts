@@ -8,34 +8,40 @@ import { busesOnLine, servedCities } from '../sim/selectors';
 import type { Bus, CityId, GameState, Line, RouteId } from '../sim/types';
 import { h } from '../ui/dom';
 import { formatPeople } from '../ui/format';
+import { addBaseMap, readMapColors } from './baseMap';
 
-/**
- * Mapa-base escuro. A CARTO (escolha original do plano) passou a exigir chave de API em 2026;
- * a Esri World Dark Gray Base responde sem chave. Conferir os termos de uso antes de publicar.
- * Trocar de provedor é mudar só este objeto.
- */
-const BASEMAP = {
-  url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-  attribution: 'Sources: <a href="https://www.esri.com/">Esri</a>, HERE, Garmin, © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, and the GIS user community',
-  maxNativeZoom: 16,
-};
+/** Caixa de Santa Catarina ([sul, oeste], [norte, leste]); a vista e o limite de arraste partem dela. */
+const SC_BOX = L.latLngBounds([-29.4, -53.9], [-25.9, -48.3]);
+/** Folga do limite de arraste em volta de SC, para ver PR, RS e a Argentina. */
+const MAX_BOUNDS_PAD = 0.5;
+/** Abaixo deste zoom os nomes das cidades jogáveis se atropelam (celular): a vista inicial enquadra só as cidades. */
+const READABLE_ZOOM = 7;
+/** Espaço à direita para o nome da cidade mais a leste (os rótulos saem para a direita do ponto). */
+const LABEL_ROOM: L.PointExpression = [110, 0];
+const ATTRIBUTION =
+  'Malhas © <a href="https://www.ibge.gov.br/">IBGE</a> · Rodovias © <a href="https://www.openstreetmap.org/copyright">colaboradores do OpenStreetMap</a> (ODbL) · <a href="https://www.naturalearthdata.com/">Natural Earth</a>';
 const POPUP_MAX_WIDTH = 260;
 
 type OpenPopup = { kind: 'bus'; id: string } | { kind: 'city'; id: CityId } | null;
 
-/** Mapa de SC: fundo escuro, rodovias, linhas da empresa, cidades e ônibus andando. */
+/** Mapa de SC: fundo próprio em vetor, rodovias do jogo, linhas da empresa, cidades e ônibus andando. */
 export function mountMap(el: HTMLElement, store: Store): () => void {
   const c = store.catalog;
   const container = h('div', { class: 'map-root' });
   el.replaceChildren(container);
 
-  const map = L.map(container, { minZoom: 7, maxZoom: 12, zoomSnap: 0.25, zoomControl: true, attributionControl: true });
-  L.tileLayer(BASEMAP.url, { attribution: BASEMAP.attribution, maxNativeZoom: BASEMAP.maxNativeZoom, maxZoom: 12, minZoom: 7 }).addTo(map);
+  const map = L.map(container, { minZoom: 6, maxZoom: 12, zoomSnap: 0.25, zoomControl: true, attributionControl: true });
   map.attributionControl.setPrefix(false);
+  map.attributionControl.addAttribution(ATTRIBUTION);
 
-  const cityBounds = L.latLngBounds(c.cities.map((city) => [city.lat, city.lng] as [number, number]));
-  map.fitBounds(cityBounds.pad(0.3));
-  map.setMaxBounds(cityBounds.pad(1));
+  map.fitBounds(SC_BOX, { paddingBottomRight: LABEL_ROOM });
+  if (map.getZoom() < READABLE_ZOOM) {
+    const cityBounds = L.latLngBounds(c.cities.map((city) => [city.lat, city.lng] as [number, number]));
+    map.fitBounds(cityBounds.pad(0.3), { paddingBottomRight: LABEL_ROOM });
+  }
+  map.setMaxBounds(SC_BOX.pad(MAX_BOUNDS_PAD));
+  const playable = new Set(c.cities.flatMap((city) => (city.ibge === undefined ? [] : [city.ibge])));
+  void addBaseMap(map, { colors: readMapColors(container), hideTowns: playable });
 
   const indexes = new Map<RouteId, RoadIndex>(c.roads.map((road) => [road.id, buildRoadIndex(road)]));
   const roadLayers = new Map<RouteId, L.Polyline>();
@@ -56,6 +62,12 @@ export function mountMap(el: HTMLElement, store: Store): () => void {
   }
 
   const busMarkers = new Map<string, L.Marker>();
+  /**
+   * Cores dos ícones atuais. Trocar o ícone recria o miolo do marcador: só quando as cores mudam.
+   * Cada marcador tem o próprio ícone (o elemento HTML de um DivIcon não pode ser dividido entre marcadores).
+   */
+  const colorKey = ({ primaryColor, secondaryColor }: GameState['company']) => `${primaryColor}|${secondaryColor}`;
+  let iconKey = colorKey(store.getState().company);
   const popup = L.popup({ maxWidth: POPUP_MAX_WIDTH, className: 'map-popup', autoPan: true, closeButton: true });
   let open: OpenPopup = null;
   popup.on('remove', () => { open = null; });
@@ -128,8 +140,7 @@ export function mountMap(el: HTMLElement, store: Store): () => void {
     return h('div');
   }
 
-  function busIcon(): L.DivIcon {
-    const { primaryColor, secondaryColor } = store.getState().company;
+  function busIcon({ primaryColor, secondaryColor }: GameState['company']): L.DivIcon {
     const body = h('div', { class: 'bus-marker-body' }, h('span', { class: 'bus-marker-stripe' }));
     body.style.background = primaryColor;
     (body.firstChild as HTMLElement).style.background = secondaryColor;
@@ -156,7 +167,8 @@ export function mountMap(el: HTMLElement, store: Store): () => void {
       dot.bringToFront();
       if (s.company.hqCityId === id) { if (!map.hasLayer(ring)) ring.addTo(map); } else ring.remove();
     }
-    const icon = busIcon();
+    const recolor = colorKey(s.company) !== iconKey;
+    iconKey = colorKey(s.company);
     const onLine = new Set<string>();
     for (const bus of s.buses) {
       const pos = busPosition(s, bus);
@@ -164,14 +176,16 @@ export function mountMap(el: HTMLElement, store: Store): () => void {
       onLine.add(bus.id);
       let marker = busMarkers.get(bus.id);
       if (!marker) {
-        marker = L.marker(pos, { icon, keyboard: true, title: bus.name, riseOnHover: true });
+        marker = L.marker(pos, { icon: busIcon(s.company), keyboard: true, title: bus.name, riseOnHover: true });
         marker.on('click', () => openPopup({ kind: 'bus', id: bus.id }, marker!.getLatLng()));
         marker.addTo(map);
         busMarkers.set(bus.id, marker);
       } else {
-        marker.setIcon(icon);
+        if (recolor) marker.setIcon(busIcon(s.company));
         marker.setLatLng(pos);
         marker.options.title = bus.name;
+        const el = marker.getElement();
+        if (el && el.title !== bus.name) el.title = bus.name;
       }
     }
     for (const [id, marker] of busMarkers) if (!onLine.has(id)) { marker.remove(); busMarkers.delete(id); }

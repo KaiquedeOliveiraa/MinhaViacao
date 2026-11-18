@@ -33,6 +33,19 @@ test('criar uma viação, ganhar dinheiro e continuar depois de recarregar', asy
   await page.locator('[data-speed="4"]').click();
   await expect(cash).not.toHaveText(startCash!, { timeout: 90_000 }); // a primeira viagem chega
 
+  // mexer no jogo não pode recriar o marcador do ônibus (a animação dele recomeçaria);
+  // o Leaflet reaproveita a div externa no setIcon e troca o miolo, então conferir os dois
+  await expect(page.locator('.bus-marker')).toHaveCount(1);
+  const marker = await page.locator('.bus-marker').elementHandle();
+  const body = await page.locator('.bus-marker .bus-marker-body').elementHandle();
+  const slider = page.locator('.price-slider').first();
+  const price = page.locator('[data-live="price"]').first();
+  const priceBefore = await price.textContent();
+  await slider.fill((await slider.getAttribute('min'))!);
+  await expect(price).not.toHaveText(priceBefore!);
+  expect(await marker!.evaluate((el) => el.isConnected), 'marcador do ônibus foi recriado').toBe(true);
+  expect(await body!.evaluate((el) => el.isConnected), 'ícone do ônibus foi recriado').toBe(true);
+
   await page.locator('[data-tab="garage"]').click();
   await expect(page.locator('[data-bus] .bus-card-art svg')).toHaveCount(1);
   await expectNoHorizontalScroll(page, 'garagem');
