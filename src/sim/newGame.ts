@@ -3,7 +3,10 @@ import { getCity, getRoad, routeId } from './catalog';
 import { potentialPerDay } from './demand';
 import type { Catalog, CityId, Company, DayStats, GameState, Line, LiveryStyle, LogoIconId } from './types';
 
-export const LOGO_ICON_IDS: readonly LogoIconId[] = ['wheel', 'road', 'bus', 'pine', 'mountain', 'wave'];
+export const LOGO_ICON_IDS: readonly LogoIconId[] = [
+  'wheel', 'road', 'bus', 'pine', 'mountain', 'wave',
+  'star', 'arrow', 'chevrons', 'diamond', 'circles', 'sun', 'bird', 'horse', 'fish', 'peaks', 'waves', 'compass',
+];
 export const LIVERY_STYLES: readonly LiveryStyle[] = ['plain', 'stripe', 'diagonal', 'wave'];
 export const MAX_LOGO_DATA_URL_LENGTH = 200_000;
 

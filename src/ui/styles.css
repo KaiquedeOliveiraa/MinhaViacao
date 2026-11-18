@@ -253,7 +253,7 @@
 @media (min-width: 1100px) { .gallery .card-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .gallery-item { margin: 0; display: grid; gap: 6px; padding: 14px; }
 .gallery-item figcaption { font-size: 13px; }
-.gallery-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.gallery-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; }
 .gallery-thumb { padding: 6px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); }
 .gallery-logo { display: grid; justify-items: center; gap: 6px; font-size: 12px; width: 84px; text-align: center; }
 

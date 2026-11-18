@@ -14,17 +14,23 @@ const SCHEMES = [
   { name: 'Azul-marinho e amarelo', primary: '#1a237e', secondary: '#ffd400' },
 ];
 
+/** Ícone de cada ônibus da galeria; a segunda paleta continua de onde a primeira parou, assim todo ícone aparece num ônibus. */
+function iconFor(scheme: number, shape: number, livery: number): LogoIconId {
+  const perScheme = BUS_SHAPES.length * LIVERY_STYLES.length;
+  return ICONS[(scheme * perScheme + shape * LIVERY_STYLES.length + livery) % ICONS.length]!;
+}
+
 /** Galeria de conferência dos desenhos (/?galeria): todas as formas, pinturas e logos. */
 export function renderGallery(): HTMLElement {
   return h('div', { class: 'start-page' },
     renderSiteHeader(),
     h('main', { class: 'gallery' },
       h('h1', { class: 'title' }, 'Galeria de conferência'),
-      ...SCHEMES.map((scheme) => h('section', { class: 'gallery-section' },
+      ...SCHEMES.map((scheme, s) => h('section', { class: 'gallery-section' },
         h('p', { class: 'eyebrow' }, scheme.name),
         h('div', { class: 'card-grid' },
           ...BUS_SHAPES.flatMap((shape, i) => LIVERY_STYLES.map((livery, j) => h('figure', { class: 'card gallery-item' },
-            busSvg({ shape, livery, primary: scheme.primary, secondary: scheme.secondary, logo: { kind: 'icon', iconId: ICONS[(i * LIVERY_STYLES.length + j) % ICONS.length]! } }),
+            busSvg({ shape, livery, primary: scheme.primary, secondary: scheme.secondary, logo: { kind: 'icon', iconId: iconFor(s, i, j) } }),
             h('figcaption', { class: 'muted' }, `${SHAPE_NAMES[shape]} · ${LIVERY_NAMES[livery]}`),
           ))),
         ),

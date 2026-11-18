@@ -5,7 +5,9 @@ export type RouteId = string; // os dois CityId em ordem alfabética, unidos por
 export type End = 'a' | 'b';
 export type Difficulty = 'facil' | 'medio' | 'dificil';
 export type LiveryStyle = 'plain' | 'stripe' | 'diagonal' | 'wave';
-export type LogoIconId = 'wheel' | 'road' | 'bus' | 'pine' | 'mountain' | 'wave';
+export type LogoIconId =
+  | 'wheel' | 'road' | 'bus' | 'pine' | 'mountain' | 'wave'
+  | 'star' | 'arrow' | 'chevrons' | 'diamond' | 'circles' | 'sun' | 'bird' | 'horse' | 'fish' | 'peaks' | 'waves' | 'compass';
 
 export interface City { id: CityId; ibge?: number; name: string; population: number; lat: number; lng: number; difficulty: Difficulty; }
 export type BusShape = 'van' | 'micro' | 'conv' | 'rodo';

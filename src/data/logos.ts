@@ -1,6 +1,10 @@
 import type { LogoIconId } from '../sim/types';
 
-/** Ícones próprios, cada um um único `path` em 24×24, desenhado com fill-rule evenodd. */
+/**
+ * Ícones próprios, cada um um único `path` em 24×24, desenhado com fill-rule evenodd.
+ * Os 6 primeiros vêm da fase 1 e não mudam (saves antigos usam esses ids); os demais seguem o espírito das
+ * viações brasileiras (formas geométricas, bichos, serras, ondas) sem copiar logotipo de ninguém.
+ */
 export const LOGO_ICONS: Record<LogoIconId, { label: string; path: string }> = {
   wheel: {
     label: 'Roda com asas',
@@ -29,5 +33,62 @@ export const LOGO_ICONS: Record<LogoIconId, { label: string; path: string }> = {
     label: 'Onda',
     path: 'M2 15.2c2.6 0 3.6-2.1 6.2-2.1s3.6 2.1 6.2 2.1 3.6-2.1 6.2-2.1c.6 0 1 .1 1.4.3V21H2z'
       + 'M2 12.6C4.6 6.4 10.8 3.2 16.4 5.2c-3.2.1-5.4 1.8-6 4.3 1.6-1.4 3.6-1.7 5.6-.8-2.6.4-4.4 2.3-4.9 4.6-2.8-1.6-6.1-2.2-9.1-.7z',
+  },
+  star: {
+    label: 'Estrela',
+    path: 'M12 1.7L14.7 9.18L22.65 9.44L16.37 14.32L18.58 21.96L12 17.5L5.42 21.96L7.63 14.32L1.35 9.44L9.3 9.18z',
+  },
+  arrow: {
+    label: 'Seta',
+    path: 'M1.5 15.5l2.2-7h9.8V3.5l9 8.5-9 8.5v-5z',
+  },
+  chevrons: {
+    label: 'Setas duplas',
+    path: 'M1.5 4h5l8 8-8 8h-5l8-8zM9.5 4h5l8 8-8 8h-5l8-8z',
+  },
+  diamond: {
+    label: 'Losango',
+    path: 'M12 1.2L22.8 12 12 22.8 1.2 12zM12 5.4L18.6 12 12 18.6 5.4 12zM12 8.4l3.6 3.6-3.6 3.6-3.6-3.6z',
+  },
+  circles: {
+    label: 'Anéis entrelaçados',
+    path: 'M9.58 18.86A7 7 0 1 1 15.06 13.4L12.51 12.88A4.4 4.4 0 1 0 9.07 16.31z'
+      + 'M14.42 5.14A7 7 0 1 1 8.94 10.6L11.49 11.12A4.4 4.4 0 1 0 14.93 7.69z',
+  },
+  sun: {
+    label: 'Sol',
+    path: 'M12 6.8a5.2 5.2 0 1 1 0 10.4 5.2 5.2 0 1 1 0-10.4zM10.45 5.28L12 .7L13.55 5.28z'
+      + 'M15.86 6.28L19.21 4.79L17.72 8.14zM18.72 10.45L23.3 12L18.72 13.55zM17.72 15.86L19.21 19.21L15.86 17.72z'
+      + 'M13.55 18.72L12 23.3L10.45 18.72zM8.14 17.72L4.79 19.21L6.28 15.86zM5.28 13.55L.7 12L5.28 10.45z'
+      + 'M6.28 8.14L4.79 4.79L8.14 6.28z',
+  },
+  bird: {
+    label: 'Pássaro em voo',
+    path: 'M.8 7.6C5.2 5 9.4 6.4 12 10.4 14.6 6.4 18.8 5 23.2 7.6 18.8 8.8 15.4 12.4 13.3 17.8L12 19.6l-1.3-1.8C8.6 12.4 5.2 8.8.8 7.6z',
+  },
+  horse: {
+    label: 'Cavalo',
+    path: 'M6 22.5L5 19.6Q3.4 19.8 1.4 19.4 3.4 18.4 4.6 17Q3.2 16.4 1.8 14.6 3.6 14.6 5.2 13.6Q4.2 12.4 3.4 10 5.2 10.6 6.6 10.4Q6.2 8.8 6.2 6.6 7.4 7.4 8.6 7.2L9 1.6l2.6 2.8c2.8.3 5.3 2.2 7.2 4.8l2.9 3.4c.9 1.1.3 3-1.3 3.1l-3-.3c-1.6-.2-2.8-.8-3.8-1.6-.9 2.6-.1 5.6 2.2 8.7z'
+      + 'M12.6 7.2a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4z',
+  },
+  fish: {
+    label: 'Peixe',
+    path: 'M1.5 12C4.6 6.8 11.4 5.4 16.2 9.6L21.8 5.6 20.2 12l1.6 6.4-5.6-4C11.4 18.6 4.6 17.2 1.5 12z'
+      + 'M6.6 9.8a1.3 1.3 0 1 0 0 2.6 1.3 1.3 0 0 0 0-2.6zM10.2 8.6c1.3 2.2 1.3 4.6 0 6.8h-1.5c1.3-2.2 1.3-4.6 0-6.8z',
+  },
+  peaks: {
+    label: 'Serra',
+    path: 'M.8 20.5L6.2 10.5l3 4.1 4.4-10.8 3.8 7.8 2-3 4.8 11.9zM12.8 7.9h2l1.2 2.3-1.1-.9-1.1 1.1-1.1-1.1-.9.9z',
+  },
+  waves: {
+    label: 'Ondas do mar',
+    path: 'M1.5 4.6q3.5-2.6 7 0t7 0 7 0v2.9q-3.5-2.6-7 0t-7 0-7 0z'
+      + 'M1.5 10.6q3.5-2.6 7 0t7 0 7 0v2.9q-3.5-2.6-7 0t-7 0-7 0z'
+      + 'M1.5 16.6q3.5-2.6 7 0t7 0 7 0v2.9q-3.5-2.6-7 0t-7 0-7 0z',
+  },
+  compass: {
+    label: 'Rosa dos ventos',
+    path: 'M12 .6L13.34 8.77L17.52 6.48L15.23 10.66L23.4 12L15.23 13.34L17.52 17.52L13.34 15.23L12 23.4L10.66 15.23L6.48 17.52L8.77 13.34L.6 12L8.77 10.66L6.48 6.48L10.66 8.77z'
+      + 'M12 10.4a1.6 1.6 0 1 1 0 3.2 1.6 1.6 0 1 1 0-3.2z',
   },
 };
