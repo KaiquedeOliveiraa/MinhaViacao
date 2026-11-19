@@ -5,3 +5,6 @@ dist
 test-results/
 playwright-report/
 .DS_Store
+
+# referências de terceiros (fotos e desenhos de ônibus): só para consulta local, nunca commitar
+docs/referencias/*
