@@ -6,6 +6,7 @@ import { confirmDialog } from './dialog';
 import { h } from './dom';
 import { renderInstallCard } from './installCard';
 import { logoView } from './logoView';
+import { openRivalsDialog } from './rivalsDialog';
 import { toast } from './toast';
 
 export interface MenuDeps { store: Store; storage: SaveStorage; onEditIdentity(): void; onExit(): void; onNewGame(): void; }
@@ -70,6 +71,7 @@ export function openCompanyMenu(deps: MenuDeps): void {
 
   const items = [
     item('edit', 'Editar identidade', 'Nome, cores, logo e pintura', deps.onEditIdentity),
+    item('rivals', 'Viações rivais', 'Metas famosas, ainda bloqueadas', () => openRivalsDialog(store)),
     item('export', 'Exportar jogo salvo', 'Baixa um arquivo de cópia', () => { downloadSave(store); toast('Arquivo do jogo baixado.', 'ok'); }),
     item('import', 'Importar jogo salvo', 'Troca a viação por um arquivo', async () => {
       if (!(await confirmDialog('Isso substitui a viação atual. Continuar?', 'Importar'))) return;

@@ -24,10 +24,10 @@ test('importar arquivo válido troca o jogo e grava', () => {
   expect(store.getState()).toEqual(other);
   expect(JSON.parse(kv.data.get(SAVE_KEY)!).company.name).toBe('Outra');
 });
-test('o menu tem os cinco itens', () => {
+test('o menu tem os seis itens', () => {
   const store = createStore(testCatalog, createGame(testCatalog, testCompany));
   openCompanyMenu({ store, storage: createStorage(memoryKv()), onEditIdentity() {}, onExit() {}, onNewGame() {} });
-  expect([...document.querySelectorAll('[data-menu]')].map(n => n.getAttribute('data-menu'))).toEqual(['edit', 'export', 'import', 'new', 'exit']);
+  expect([...document.querySelectorAll('[data-menu]')].map(n => n.getAttribute('data-menu'))).toEqual(['edit', 'rivals', 'export', 'import', 'new', 'exit']);
 });
 test('a mensagem de importação inválida diz o motivo', () => {
   const store = createStore(testCatalog, createGame(testCatalog, testCompany));

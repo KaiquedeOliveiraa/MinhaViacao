@@ -842,3 +842,20 @@
 .listing-info { display: grid; gap: 4px; }
 .listing-warn { color: var(--money-down); font-weight: 700; }
 .listing-warn[hidden] { display: none; }
+
+/* ---------- viações rivais bloqueadas ---------- */
+.rivals-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.rival-item { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); min-width: 0; }
+.rival-item .padlock { flex: none; margin-top: 2px; color: var(--text-dim); }
+.padlock-shackle { stroke: currentColor; }
+.padlock-body { fill: currentColor; }
+.padlock-hole { fill: var(--surface-2); }
+.rival-item.is-met .padlock { color: var(--accent); }
+.rival-info { display: grid; gap: 4px; flex: 1; min-width: 0; }
+.rival-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.rival-name { font-weight: 700; font-size: 16px; overflow-wrap: anywhere; }
+.rival-req { font-size: 14px; }
+.rival-bar { height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
+.rival-fill { display: block; height: 100%; background: var(--accent); }
+.rivals-panel { overflow-x: hidden; }
+@media (min-width: 900px) { .rivals-panel { width: min(560px, 100%); } }

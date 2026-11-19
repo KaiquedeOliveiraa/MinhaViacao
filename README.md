@@ -72,6 +72,8 @@ O site usa caminhos relativos (`base: './'`), então funciona em `https://<usuar
 
 A atribuição aparece no canto do mapa. `npm run measure:map` mede o mapa num celular simulado (CPU 4× mais lenta, 390×844) e imprime quadros por segundo, quadros lentos e bytes baixados; requer `npm run build` antes e aceita `PW_CHANNEL`.
 
+**Nomes de viações reais:** aparecem só como metas bloqueadas na tela "Viações rivais", sem logotipos, e ficam todos em `src/data/rivals.ts`. Se o jogo for divulgado, os nomes podem trazer risco de marca registrada: troque-os por nomes fictícios nesse arquivo.
+
 **Mapa interativo:** [Leaflet](https://leafletjs.com/) (BSD-2). **Fontes:** Inter e Barlow Condensed (SIL Open Font License), via Fontsource.
 
-Os modelos de ônibus têm nomes inventados; o jogo não usa marcas reais de fabricantes nem de empresas de ônibus.
+Os modelos de ônibus têm nomes inventados; o jogo não usa marcas reais de fabricantes (viações reais só como metas bloqueadas, veja acima).
