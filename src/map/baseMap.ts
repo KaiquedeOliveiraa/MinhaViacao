@@ -14,7 +14,10 @@ type LineGeom = { type: 'LineString'; coordinates: Pos[] } | { type: 'MultiLineS
 interface Feature<G, P> { type: 'Feature'; geometry: G; properties: P }
 interface Collection<G, P> { type: 'FeatureCollection'; features: Feature<G, P>[] }
 
-type Municipios = Collection<PolyGeom, { id: number; nome: string; centro: [number, number] }>;
+/** Município como vem de sc-municipios.json; `pop` (Censo 2022) falta em arquivos antigos. */
+export interface Municipio { id: number; nome: string; centro: [number, number]; pop?: number }
+
+type Municipios = Collection<PolyGeom, Municipio>;
 type Vizinhos = Collection<PolyGeom, { nome: string }>;
 type Rodovias = Collection<LineGeom, { ref: string; tipo: 'federal' | 'estadual' }>;
 
@@ -52,6 +55,11 @@ const defaultLoad = async (file: string): Promise<unknown> => {
 const isCollection = (x: unknown): x is Collection<unknown, unknown> =>
   !!x && typeof x === 'object' && (x as { type?: unknown }).type === 'FeatureCollection' && Array.isArray((x as { features?: unknown }).features);
 
+const isMunicipio = (p: unknown): p is Municipio => {
+  const m = p as Partial<Municipio> | null;
+  return !!m && typeof m.id === 'number' && typeof m.nome === 'string' && Array.isArray(m.centro) && m.centro.length === 2;
+};
+
 const polygons = (g: PolyGeom): Pos[][][] => (g.type === 'Polygon' ? [g.coordinates] : g.coordinates);
 const lines = (g: LineGeom): Pos[][] => (g.type === 'LineString' ? [g.coordinates] : g.coordinates);
 const latLngs = (line: Pos[]): [number, number][] => line.map(([lng, lat]) => [lat, lng]);
@@ -86,11 +94,14 @@ export function outlineParts(g: PolyGeom): [number, number][][] {
   return parts;
 }
 
-/** Desenha o fundo. Nunca rejeita: arquivo que falhar só deixa de aparecer (um console.warn). */
+/**
+ * Desenha o fundo e devolve os municípios carregados (para os nomes no mapa).
+ * Nunca rejeita: arquivo que falhar só deixa de aparecer (um console.warn); sem municípios, devolve [].
+ */
 export async function addBaseMap(
   map: L.Map,
   opts: { colors: MapColors; hideTowns: ReadonlySet<number>; load?: (file: string) => Promise<unknown> },
-): Promise<void> {
+): Promise<Municipio[]> {
   const load = opts.load ?? defaultLoad;
   const { colors } = opts;
   let removed = false;
@@ -98,7 +109,7 @@ export async function addBaseMap(
 
   const files = ['vizinhos.json', 'sc-municipios.json', 'rodovias.json'] as const;
   const results = await Promise.allSettled(files.map((f) => load(f)));
-  if (removed) return;
+  if (removed) return [];
 
   const failures: string[] = [];
   const data = new Map<string, unknown>();
@@ -151,4 +162,6 @@ export async function addBaseMap(
   }
 
   if (failures.length > 0) console.warn(`Mapa: fundo incompleto (${failures.join('; ')})`);
+  const mun = data.get('sc-municipios.json') as Municipios | undefined;
+  return (mun?.features ?? []).flatMap((f) => (isMunicipio(f.properties) ? [f.properties] : []));
 }

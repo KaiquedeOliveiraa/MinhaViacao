@@ -6,6 +6,29 @@ async function expectNoHorizontalScroll(page: Page, where: string) {
   expect(overflow, `rolagem horizontal em: ${where}`).toBeLessThanOrEqual(0);
 }
 
+/** Os nomes das 4 cidades jogáveis aparecem inteiros dentro do mapa e sem se sobrepor. */
+async function expectPlayableLabels(page: Page) {
+  const labels = page.locator('.map-label.is-playable');
+  await expect(labels).toHaveCount(4);
+  for (const label of await labels.all()) await expect(label).toBeVisible();
+  const { root, boxes } = await page.evaluate(() => {
+    const rect = (el: Element) => { const r = el.getBoundingClientRect(); return { left: r.left, top: r.top, right: r.right, bottom: r.bottom }; };
+    return {
+      root: rect(document.querySelector('.leaflet-container')!),
+      boxes: [...document.querySelectorAll('.map-label.is-playable')].map((el) => ({ name: el.textContent ?? '', ...rect(el) })),
+    };
+  });
+  for (const b of boxes) {
+    expect(b.left >= root.left && b.top >= root.top && b.right <= root.right && b.bottom <= root.bottom, `rótulo cortado: ${b.name}`).toBe(true);
+  }
+  for (const [i, a] of boxes.entries()) {
+    for (const b of boxes.slice(i + 1)) {
+      const overlap = a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+      expect(overlap, `rótulos sobrepostos: ${a.name} e ${b.name}`).toBe(false);
+    }
+  }
+}
+
 test('criar uma viação, seguir o tutorial, ganhar dinheiro e continuar depois de recarregar', async ({ page, isMobile }) => {
   const errors: string[] = [];
   page.on('pageerror', e => errors.push(e.message));
@@ -29,6 +52,7 @@ test('criar uma viação, seguir o tutorial, ganhar dinheiro e continuar depois 
   await expect(cash).toHaveText('R$ 35.000');
   await expect(tutorial).toContainText('Passo 1 de 3');
   await expectNoHorizontalScroll(page, 'mapa com o tutorial');
+  await expectPlayableLabels(page);
 
   // passo 1: Loja (uma oferta por cartão, novos e usados) → comprar o micro usado 2012
   await tutorial.getByRole('button', { name: 'Abrir a Loja' }).click();

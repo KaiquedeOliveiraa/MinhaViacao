@@ -66,7 +66,7 @@ O site usa caminhos relativos (`base: './'`), então funciona em `https://<usuar
 
 **Mapa:** desenhado pelo próprio jogo, em vetor, sem tiles de terceiros. Os arquivos ficam em `public/map/` e são gerados por `npm run map` (o jogo nunca consulta esses serviços):
 
-- `sc-municipios.json` e `vizinhos.json` (Paraná e Rio Grande do Sul): malhas municipais e estaduais (API de malhas v3) e nomes dos municípios (API de localidades) do [IBGE](https://www.ibge.gov.br/). O ponto de cada município fica no centro do polígono, não no endereço exato da sede.
+- `sc-municipios.json` e `vizinhos.json` (Paraná e Rio Grande do Sul): malhas municipais e estaduais (API de malhas v3) e nomes dos municípios (API de localidades) do [IBGE](https://www.ibge.gov.br/). O ponto de cada município fica no centro do polígono, não no endereço exato da sede. Cada município traz também a população do Censo 2022 (IBGE, [agregado 4714](https://sidra.ibge.gov.br/tabela/4714), variável 93, API de agregados v3), que decide quais nomes aparecem em cada zoom (as maiores primeiro).
 - `vizinhos.json` (Argentina): [Natural Earth](https://www.naturalearthdata.com/) 1:50m, domínio público.
 - `rodovias.json`: rodovias BR e SC do [OpenStreetMap](https://www.openstreetmap.org/copyright), consultadas pela Overpass API. © colaboradores do OpenStreetMap; este arquivo é um banco de dados derivado e fica sob a [ODbL](https://opendatacommons.org/licenses/odbl/).
 

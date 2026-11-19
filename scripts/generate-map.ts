@@ -80,12 +80,27 @@ function write(files: Record<string, unknown>) {
   return totalGz;
 }
 
+/** População do Censo 2022 por código do município (IBGE, agregado 4714, variável 93). */
+async function populacao(): Promise<Map<number, number>> {
+  type Agregado = { resultados: { series: { localidade: { id: string }; serie: Record<string, string> }[] }[] }[];
+  const data = await getJson<Agregado>(
+    'https://servicodados.ibge.gov.br/api/v3/agregados/4714/periodos/2022/variaveis/93?localidades=N6%5BN3%5B42%5D%5D',
+  );
+  const pop = new Map<number, number>();
+  for (const s of data[0]?.resultados[0]?.series ?? []) {
+    const n = Number(s.serie['2022']);
+    if (Number.isFinite(n) && n > 0) pop.set(Number(s.localidade.id), n);
+  }
+  return pop;
+}
+
 async function municipios() {
-  const [mesh, names] = await Promise.all([
+  const [mesh, names, pop] = await Promise.all([
     getJson<FC<{ codarea: string }>>(
       'https://servicodados.ibge.gov.br/api/v3/malhas/estados/42?formato=application/vnd.geo%2Bjson&qualidade=minima&intrarregiao=municipio',
     ),
     getJson<{ id: number; nome: string }[]>('https://servicodados.ibge.gov.br/api/v1/localidades/estados/42/municipios'),
+    populacao(),
   ]);
   const nome = new Map(names.map((n) => [n.id, n.nome]));
   const features = mesh.features.map((f) => {
@@ -93,9 +108,11 @@ async function municipios() {
     const geometry = roundGeom(f.geometry);
     const biggest = polys(geometry).map((p) => p[0]!).sort((a, b) => ringArea(b) - ringArea(a))[0]!;
     const [lng, lat] = roundPos(ringCentroid(biggest));
-    return { type: 'Feature', properties: { id, nome: nome.get(id) ?? String(id), centro: [lat, lng] }, geometry };
+    return { type: 'Feature', properties: { id, nome: nome.get(id) ?? String(id), centro: [lat, lng], pop: pop.get(id) ?? 0 }, geometry };
   });
   if (features.length !== 295) throw new Error(`Esperava 295 municípios, veio ${features.length}`);
+  const semPop = features.filter((f) => f.properties.pop <= 0).map((f) => f.properties.nome);
+  if (semPop.length > 0) throw new Error(`Municípios sem população: ${semPop.join(', ')}`);
   return { type: 'FeatureCollection', features };
 }
 

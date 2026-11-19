@@ -667,20 +667,29 @@
 .map-city { fill: var(--surface-2); stroke: var(--text-dim); }
 .map-city.is-served { fill: var(--accent); stroke: var(--text); }
 .map-city-ring { stroke: var(--accent); }
-.leaflet-tooltip.map-label {
-  background: transparent;
-  border: 0;
-  box-shadow: none;
-  padding: 0;
+/* nomes das cidades (labelLayer.ts): a largura vem da medição; o alinhamento segue o lado do ponto */
+.map-label-pane { pointer-events: none; }
+.map-label { position: absolute; left: 0; top: 0; white-space: nowrap; pointer-events: none; }
+.map-label[data-side='left'] { text-align: right; }
+.map-label[data-side='top'], .map-label[data-side='bottom'] { text-align: center; }
+.map-label.is-playable {
   color: var(--text);
   font-family: var(--font-display);
   font-weight: 800;
   font-size: 15px;
+  line-height: 18px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   text-shadow: 0 1px 3px var(--bg), 0 0 8px var(--bg);
 }
-.leaflet-tooltip.map-label::before { display: none; }
+.map-label.is-town {
+  color: var(--map-town-label);
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 11px;
+  line-height: 14px;
+  text-shadow: 0 0 2px var(--map-sea), 0 0 2px var(--map-sea);
+}
 .bus-marker { background: none; border: 0; }
 .map-root:not(.is-zooming) .bus-marker { transition: transform var(--bus-step, 1000ms) linear; }
 .bus-marker-body {

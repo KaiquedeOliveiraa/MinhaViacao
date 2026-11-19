@@ -9,6 +9,7 @@ import type { Bus, CityId, GameState, Line, RouteId } from '../sim/types';
 import { h } from '../ui/dom';
 import { formatPeople } from '../ui/format';
 import { addBaseMap, readMapColors } from './baseMap';
+import { mountCityLabels, type TownLabel } from './labelLayer';
 
 /** Caixa de Santa Catarina ([sul, oeste], [norte, leste]); a vista e o limite de arraste partem dela. */
 const SC_BOX = L.latLngBounds([-29.4, -53.9], [-25.9, -48.3]);
@@ -16,7 +17,7 @@ const SC_BOX = L.latLngBounds([-29.4, -53.9], [-25.9, -48.3]);
 const MAX_BOUNDS_PAD = 0.5;
 /** Abaixo deste zoom os nomes das cidades jogáveis se atropelam (celular): a vista inicial enquadra só as cidades. */
 const READABLE_ZOOM = 7;
-/** Espaço à direita para o nome da cidade mais a leste (os rótulos saem para a direita do ponto). */
+/** Espaço à direita para o nome da cidade mais a leste (o rótulo prefere a direita do ponto). */
 const LABEL_ROOM: L.PointExpression = [110, 0];
 const ATTRIBUTION =
   'Malhas © <a href="https://www.ibge.gov.br/">IBGE</a> · Rodovias © <a href="https://www.openstreetmap.org/copyright">colaboradores do OpenStreetMap</a> (ODbL) · <a href="https://www.naturalearthdata.com/">Natural Earth</a>';
@@ -41,7 +42,16 @@ export function mountMap(el: HTMLElement, store: Store): () => void {
   }
   map.setMaxBounds(SC_BOX.pad(MAX_BOUNDS_PAD));
   const playable = new Set(c.cities.flatMap((city) => (city.ibge === undefined ? [] : [city.ibge])));
-  void addBaseMap(map, { colors: readMapColors(container), hideTowns: playable });
+  const playableTowns: TownLabel[] = c.cities.map((city) => ({
+    id: city.id, name: city.name, lat: city.lat, lng: city.lng, pop: city.population, playable: true,
+  }));
+  let towns = playableTowns;
+  // arquivo sem população (cache antigo): só as jogáveis ganham nome
+  const baseReady = addBaseMap(map, { colors: readMapColors(container), hideTowns: playable }).then((mun) => {
+    towns = playableTowns.concat(mun.flatMap((m) => (playable.has(m.id) || !(typeof m.pop === 'number' && m.pop > 0) ? [] : [{
+      id: String(m.id), name: m.nome, lat: m.centro[0], lng: m.centro[1], pop: m.pop, playable: false,
+    }])));
+  });
 
   const indexes = new Map<RouteId, RoadIndex>(c.roads.map((road) => [road.id, buildRoadIndex(road)]));
   const roadLayers = new Map<RouteId, L.Polyline>();
@@ -55,11 +65,12 @@ export function mountMap(el: HTMLElement, store: Store): () => void {
   for (const city of c.cities) {
     const ring = L.circleMarker([city.lat, city.lng], { radius: 11, className: 'map-city-ring', weight: 2, fill: false, interactive: false });
     const dot = L.circleMarker([city.lat, city.lng], { radius: 7, className: 'map-city', weight: 2, fillOpacity: 1 });
-    dot.bindTooltip(h('span', null, city.name), { permanent: true, direction: 'right', offset: [10, 0], className: 'map-label' });
     dot.on('click', () => openPopup({ kind: 'city', id: city.id }, [city.lat, city.lng]));
     dot.addTo(map);
     cityLayers.set(city.id, { dot, ring });
   }
+
+  const unmountLabels = mountCityLabels(map, { towns: () => towns, ready: baseReady });
 
   const busMarkers = new Map<string, L.Marker>();
   /**
@@ -223,6 +234,7 @@ export function mountMap(el: HTMLElement, store: Store): () => void {
     offChange();
     offTick();
     resize?.disconnect();
+    unmountLabels();
     map.remove();
   };
 }

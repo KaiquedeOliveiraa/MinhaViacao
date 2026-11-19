@@ -16,6 +16,7 @@
   --map-neighbor-edge: #8a8398; /* contorno de PR, RS e Argentina (desenhado com opacidade 0,5) */
   --map-highway: #575064;       /* rodovias BR e SC do fundo */
   --map-town: #6f6880;          /* sedes municipais */
+  --map-town-label: #8c859a;    /* nomes das cidades não jogáveis */
 
   /* cor da empresa (theme.ts sobrescreve) */
   --accent: #8b7cf6;

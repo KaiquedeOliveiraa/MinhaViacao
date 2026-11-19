@@ -17,7 +17,7 @@ test('sem rede, addBaseMap resolve sem lançar e avisa uma vez', async () => {
   const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
   const map = makeMap();
   const load = vi.fn(async (file: string) => { throw new Error(`falhou ${file}`); });
-  await expect(addBaseMap(map, { colors, hideTowns: new Set(), load })).resolves.toBeUndefined();
+  await expect(addBaseMap(map, { colors, hideTowns: new Set(), load })).resolves.toEqual([]);
   expect(load).toHaveBeenCalledTimes(3);
   expect(warn).toHaveBeenCalledTimes(1);
   map.remove();
@@ -26,7 +26,7 @@ test('sem rede, addBaseMap resolve sem lançar e avisa uma vez', async () => {
 test('arquivo com conteúdo inválido também não derruba o mapa', async () => {
   const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
   const map = makeMap();
-  await expect(addBaseMap(map, { colors, hideTowns: new Set(), load: async () => ({ type: 'nada' }) })).resolves.toBeUndefined();
+  await expect(addBaseMap(map, { colors, hideTowns: new Set(), load: async () => ({ type: 'nada' }) })).resolves.toEqual([]);
   expect(warn).toHaveBeenCalledTimes(1);
   map.remove();
 });
@@ -63,4 +63,24 @@ test('contorno sem recorte vira uma linha só, fechada', () => {
 test('lasca de 3 pontos no contorno do vizinho não é desenhada', () => {
   const sliver: [number, number][] = [[-53.6542, -25.3509], [-53.6251, -25.3464], [-53.6265, -25.3466], [-53.6542, -25.3509]];
   expect(outlineParts({ type: 'MultiPolygon', coordinates: [[sliver]] })).toEqual([]);
+});
+
+test('addBaseMap devolve os municípios carregados, com população quando o arquivo tem', async () => {
+  vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+  const map = makeMap();
+  const square: [number, number][] = [[-49.2, -27], [-49, -27], [-49, -26.8], [-49.2, -26.8], [-49.2, -27]];
+  const mun = {
+    type: 'FeatureCollection',
+    features: [
+      { type: 'Feature', geometry: { type: 'Polygon', coordinates: [square] }, properties: { id: 4202404, nome: 'Blumenau', centro: [-26.9, -49.1], pop: 361261 } },
+      { type: 'Feature', geometry: { type: 'Polygon', coordinates: [square] }, properties: { id: 4200606, nome: 'Aguti', centro: [-26.9, -49.1] } },
+    ],
+  };
+  const load = async (file: string) => (file === 'sc-municipios.json' ? mun : { type: 'FeatureCollection', features: [] });
+  const got = await addBaseMap(map, { colors, hideTowns: new Set(), load });
+  expect(got).toEqual([
+    { id: 4202404, nome: 'Blumenau', centro: [-26.9, -49.1], pop: 361261 },
+    { id: 4200606, nome: 'Aguti', centro: [-26.9, -49.1] },
+  ]);
+  // sem map.remove(): o canvas do jsdom não tem contexto e o Leaflet quebra ao desmontar o renderer
 });
