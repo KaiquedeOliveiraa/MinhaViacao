@@ -825,3 +825,20 @@
 .list-table th { font-family: var(--font-display); font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-dim); background: var(--surface-2); }
 .list-table tbody tr:last-child td { border-bottom: 0; }
 .list-table .list-name { font-weight: 700; white-space: normal; min-width: 84px; }
+
+/* Loja: filtros e ordenação */
+.shop-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; align-items: end; margin: 12px 0; }
+.filter-field { display: grid; gap: 4px; min-width: 0; }
+.check-field { display: flex; align-items: center; gap: 8px; min-height: var(--tap); font-weight: 600; }
+.check-field input { width: 22px; height: 22px; accent-color: var(--accent); }
+@media (min-width: 900px) { .shop-filters { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.shop-card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
+.shop-card-head .bus-card-name { flex: 1; }
+
+/* Garagem: anúncio */
+.bus-card-actions { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.badge-listing { justify-self: start; color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
+.form-error { margin: 6px 0 0; color: var(--money-down); min-height: 1em; }
+.listing-info { display: grid; gap: 4px; }
+.listing-warn { color: var(--money-down); font-weight: 700; }
+.listing-warn[hidden] { display: none; }

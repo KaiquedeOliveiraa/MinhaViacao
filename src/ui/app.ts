@@ -17,6 +17,7 @@ import { errorMessage } from './format';
 import { renderInstallCard } from './installCard';
 import { openNewLineDialog } from './newLineDialog';
 import { mountPanel } from './panel';
+import { watchListingSales } from './saleNotice';
 import { renderStartScreen } from './startScreen';
 import { renderStatsBlock } from './statsBlock';
 import { applyTheme, DEFAULT_PRIMARY, DEFAULT_SECONDARY } from './theme';
@@ -167,12 +168,14 @@ function startApp(root: HTMLElement, catalog: Catalog, storage: SaveStorage): vo
     const offTheme = store.on('change', () => {
       if (!document.querySelector('.identity-overlay')) applyTheme(document.documentElement, store.getState().company);
     });
+    const unwatchSales = watchListingSales(store);
     const loop = createLoop(store);
     loop.start();
 
     return ({ save = true } = {}) => {
       loop.stop();
       offTheme();
+      unwatchSales();
       detachAutosave();
       unmountTop();
       unmountTutorial();

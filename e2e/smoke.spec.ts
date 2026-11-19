@@ -34,6 +34,14 @@ test('criar uma viação, seguir o tutorial, ganhar dinheiro e continuar depois 
   await tutorial.getByRole('button', { name: 'Abrir a Loja' }).click();
   await expect(page.locator('[data-offer]')).toHaveCount(14);
   await expectNoHorizontalScroll(page, 'loja');
+  await expect(page.locator('[data-offer]').first()).toHaveAttribute('data-offer', 'micro-2012'); // padrão: menor preço
+  await page.locator('select[data-filter="condition"]').selectOption('usado');
+  await page.locator('input[data-filter="budget"]').check();
+  await expect(page.locator('[data-offer="micro-2012"]')).toBeVisible();
+  await expectNoHorizontalScroll(page, 'loja com filtros');
+  await page.locator('input[data-filter="budget"]').uncheck();
+  await page.locator('select[data-filter="condition"]').selectOption('todos');
+  await expect(page.locator('[data-offer]')).toHaveCount(14);
   await expect(page.locator('[data-offer="micro-2012"]')).toContainText('Usado');
   await page.locator('[data-offer="micro-2012"] [data-action="buy"]').click();
   await page.locator('.dialog-panel [data-action="confirm"]').click();

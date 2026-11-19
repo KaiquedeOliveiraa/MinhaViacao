@@ -38,6 +38,8 @@ const MESSAGES: Partial<Record<ActionError, string>> = {
   fora_da_rede: 'A linha precisa sair de uma cidade que você já atende.',
   linha_existente: 'Você já opera essa linha.',
   onibus_ocupado: 'Esse ônibus já está em uma linha.',
+  preco_invalido: 'Esse preço está fora dos limites para este ônibus.',
+  oferta_inexistente: 'Essa oferta não existe mais.',
   nome_invalido: 'O nome precisa ter de 1 a 30 letras.',
 };
 
