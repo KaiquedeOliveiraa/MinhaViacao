@@ -8,7 +8,7 @@ import type { ActionResult, Bus, GameState, LiveryStyle } from '../sim/types';
 import { busSvg, liveryThumb } from './busSvg';
 import { confirmDialog, promptDialog, showDialog } from './dialog';
 import { h } from './dom';
-import { errorMessage, formatMoney } from './format';
+import { errorMessage, formatMoney, logoKey } from './format';
 import { lineName } from './linesTab';
 import { toast } from './toast';
 
@@ -153,7 +153,7 @@ export function mountGarageTab(el: HTMLElement, store: Store): () => void {
   let key = '';
   function render() {
     const s = store.getState();
-    const next = JSON.stringify([s.company, s.buses.map((b) => [b.id, b.name, b.livery, b.lineId, b.listing?.priceCents ?? null]), s.lines.map((l) => l.id)]);
+    const next = JSON.stringify([{ ...s.company, logo: logoKey(s.company.logo) }, s.buses.map((b) => [b.id, b.name, b.livery, b.lineId, b.listing?.priceCents ?? null]), s.lines.map((l) => l.id)]);
     if (next === key) return;
     key = next;
     live.clear();
@@ -161,19 +161,8 @@ export function mountGarageTab(el: HTMLElement, store: Store): () => void {
     else grid.replaceChildren(...s.buses.map((bus) => card(s, bus)));
   }
 
-  /** O anúncio vende dentro do tick (sem 'change'): a lista de ônibus muda sem aviso. */
-  const signature = () => store.getState().buses.map((b) => `${b.id}:${b.listing?.priceCents ?? ''}`).join('|');
-  let busSignature = signature();
-  function onTick() {
-    const sig = signature();
-    if (sig === busSignature) return;
-    busSignature = sig;
-    render();
-  }
-
   render();
-  const offChange = store.on('change', () => { busSignature = signature(); render(); refreshValues(); });
-  const offTick = store.on('tick', onTick);
+  const offChange = store.on('change', () => { render(); refreshValues(); });
   const offHour = store.on('hour', refreshValues);
-  return () => { offChange(); offTick(); offHour(); };
+  return () => { offChange(); offHour(); };
 }

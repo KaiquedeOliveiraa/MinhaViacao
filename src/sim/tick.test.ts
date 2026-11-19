@@ -139,11 +139,11 @@ test('com a venda no meio, avançar em pedaços dá o mesmo resultado que avanç
   expect(once.buses.map((b) => b.id)).toEqual(['bus-2']);
 });
 
-test('dois ônibus anunciados podem vender os dois: a frota fica vazia sem erro', () => {
-  let s = ok(listBus(withSpare(), testCatalog, 'bus-1', FAIR));
-  s = ok(listBus(s, testCatalog, 'bus-2', FAIR));
-  const end = advance(s, testCatalog, 3 * 1440);
-  expect(end.buses).toEqual([]);
+test('não dá para anunciar o segundo ônibus: a frota nunca fica vazia por anúncios (regra M-1)', () => {
+  const s = ok(listBus(withSpare(), testCatalog, 'bus-1', FAIR));
+  const refused = listBus(s, testCatalog, 'bus-2', FAIR);
+  expect(refused.ok ? null : refused.error).toBe('ultimo_onibus');
+  const end = advance(s, testCatalog, 10 * 1440);
+  expect(end.buses.map((b) => b.id)).toEqual(['bus-2']);
   expect(Number.isInteger(end.cashCents)).toBe(true);
-  expect(advance(end, testCatalog, 1440).cashCents).toBe(end.cashCents); // sem frota, sem custo fixo
 });

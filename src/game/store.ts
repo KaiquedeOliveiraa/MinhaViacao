@@ -48,9 +48,12 @@ export function createStore(c: Catalog, initial: GameState, speed: Speed = 1): S
     advance(minutes) {
       if (!(minutes > 0)) return;
       const hourBefore = Math.floor(state.clockMinutes / 60);
+      const busesBefore = state.buses.map((b) => b.id).join('|');
       state = advanceSim(state, c, minutes);
       emit('tick');
       if (Math.floor(state.clockMinutes / 60) !== hourBefore) emit('hour');
+      // A venda de um anúncio acontece dentro do tick: a frota mudou, as telas precisam se reconstruir.
+      if (state.buses.map((b) => b.id).join('|') !== busesBefore) emit('change');
     },
     on(event, fn) {
       listeners[event].add(fn);

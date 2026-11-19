@@ -34,6 +34,12 @@ const SAVE_FAILED = 'Não foi possível salvar neste navegador. Exporte seu jogo
 
 /** Ponto de entrada: trava de aba, leitura do save e tela inicial. */
 export async function boot(root: HTMLElement, deps: BootDeps): Promise<void> {
+  // A galeria de desenvolvimento nunca pega a trava de aba.
+  if (new URLSearchParams(window.location.search).has('galeria')) {
+    const { renderGallery } = await import('./gallery');
+    root.replaceChildren(renderGallery());
+    return;
+  }
   if (!(await acquireTabLock(deps.locks))) {
     applyTheme(document.documentElement, null);
     root.replaceChildren(h('main', { class: 'locked-screen' },
@@ -200,9 +206,5 @@ function startApp(root: HTMLElement, catalog: Catalog, storage: SaveStorage): vo
     if (window.scrollY > 0) window.scrollTo(0, 0);
   }
 
-  if (new URLSearchParams(window.location.search).has('galeria')) {
-    void import('./gallery').then(({ renderGallery }) => root.replaceChildren(renderGallery()));
-    return;
-  }
   go('start');
 }

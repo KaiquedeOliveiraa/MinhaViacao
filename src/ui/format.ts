@@ -1,5 +1,5 @@
 import { MINUTES_PER_DAY } from '../data/balance';
-import type { ActionError } from '../sim/types';
+import type { ActionError, LogoRef } from '../sim/types';
 
 function thousands(n: number): string {
   return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
@@ -34,6 +34,7 @@ export function formatPeople(n: number): string {
 
 const MESSAGES: Partial<Record<ActionError, string>> = {
   saldo_insuficiente: 'Caixa insuficiente.',
+  onibus_inexistente: 'Esse ônibus não existe mais.',
   ultimo_onibus: 'Sua viação precisa de pelo menos um ônibus.',
   fora_da_rede: 'A linha precisa sair de uma cidade que você já atende.',
   linha_existente: 'Você já opera essa linha.',
@@ -45,4 +46,11 @@ const MESSAGES: Partial<Record<ActionError, string>> = {
 
 export function errorMessage(e: ActionError): string {
   return MESSAGES[e] ?? 'Não foi possível concluir a ação.';
+}
+
+/** Chave barata para comparar logos em chaves de renderização (evita serializar a imagem inteira, até 200 KB). */
+export function logoKey(logo: LogoRef): string {
+  if (logo.kind === 'icon') return `icon:${logo.iconId}`;
+  const u = logo.dataUrl;
+  return `img:${u.length}:${u.slice(u.length >> 1, (u.length >> 1) + 24)}:${u.slice(-24)}`;
 }

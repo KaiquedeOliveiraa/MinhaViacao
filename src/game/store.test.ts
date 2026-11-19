@@ -65,3 +65,23 @@ test('grava quando a página fica escondida', () => {
   store.advance(10); hidden = true; listeners.visibilitychange!();
   expect(JSON.parse(kv.data.get(SAVE_KEY)!).clockMinutes).toBe(10);
 });
+
+test('venda de anúncio no tick emite change depois de tick e hour', async () => {
+  const { listBus } = await import('../sim/actions');
+  const { sellNowCents } = await import('./../sim/market');
+  const store = createStore(testCatalog, { ...startedGame(testCatalog), cashCents: 5_000_000 }, 0);
+  store.dispatch((s, c) => buyBus(s, c, { modelId: 'mini' }));
+  store.dispatch((s, c) => listBus(s, c, 'bus-2', sellNowCents(c, s.buses[1]!, s.clockMinutes)));
+  const events: string[] = [];
+  store.on('tick', () => events.push('tick')); store.on('hour', () => events.push('hour')); store.on('change', () => events.push('change'));
+  for (let i = 0; i < 400 && store.getState().buses.length > 1; i++) store.advance(60);
+  expect(store.getState().buses).toHaveLength(1);
+  expect(events.filter((e) => e === 'change')).toHaveLength(1);
+  expect(events.slice(-3)).toEqual(['tick', 'hour', 'change']);
+});
+test('sem mudança na frota o tick não emite change', () => {
+  const store = createStore(testCatalog, startedGame(testCatalog), 0);
+  let changes = 0; store.on('change', () => changes++);
+  store.advance(120);
+  expect(changes).toBe(0);
+});

@@ -56,11 +56,14 @@ export function buyBus(s: GameState, c: Catalog, input: { modelId: ModelId; name
   return buyOffer(s, c, { offerId: offer.id, name: input.name });
 }
 
+/** A frota nunca chega a zero por vendas: sempre sobra um ônibus fora de anúncio além deste. */
+const hasOtherUnlisted = (s: GameState, busId: BusId): boolean => s.buses.some((b) => b.id !== busId && !b.listing);
+
 /** Venda imediata pelo valor de `sellNowCents`; um anúncio do ônibus some junto. */
 export function sellBus(s: GameState, c: Catalog, busId: BusId): ActionResult {
   const bus = s.buses.find((b) => b.id === busId);
   if (!bus) return fail('onibus_inexistente');
-  if (s.buses.length <= 1) return fail('ultimo_onibus');
+  if (!hasOtherUnlisted(s, busId)) return fail('ultimo_onibus');
   const next = structuredClone(s);
   next.buses = next.buses.filter((b) => b.id !== busId);
   next.cashCents += sellNowCents(c, bus, s.clockMinutes);
@@ -71,7 +74,7 @@ export function sellBus(s: GameState, c: Catalog, busId: BusId): ActionResult {
 export function listBus(s: GameState, c: Catalog, busId: BusId, priceCents: number): ActionResult {
   const index = s.buses.findIndex((b) => b.id === busId);
   if (index < 0) return fail('onibus_inexistente');
-  if (s.buses.length <= 1) return fail('ultimo_onibus');
+  if (!hasOtherUnlisted(s, busId)) return fail('ultimo_onibus');
   const bus = s.buses[index]!;
   const price = Math.round(priceCents);
   const min = sellNowCents(c, bus, s.clockMinutes);

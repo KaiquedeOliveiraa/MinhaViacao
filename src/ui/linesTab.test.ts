@@ -97,3 +97,16 @@ test('o nome completo do ônibus fica no cartão, com o modelo em outro elemento
   expect(li.querySelector('.line-bus-name')!.textContent).toBe(name);
   expect(li.querySelector('.line-bus-model')).not.toBeNull();
 });
+
+test('quando o anúncio vende no tick, o ônibus some do cartão e da lista de adicionar', async () => {
+  const { listBus } = await import('../sim/actions');
+  const { sellNowCents } = await import('../sim/market');
+  const { store, el } = setup(5_000_000);
+  store.dispatch((s, c) => buyBus(s, c, { modelId: 'mini', name: 'Reserva' }));
+  store.dispatch((s, c) => listBus(s, c, 'bus-2', sellNowCents(c, s.buses[1]!, s.clockMinutes)));
+  mountLinesTab(el, store);
+  expect(el.textContent).toContain('Reserva');
+  for (let i = 0; i < 400 && store.getState().buses.length > 1; i++) store.advance(60);
+  expect(store.getState().buses).toHaveLength(1);
+  expect(el.textContent).not.toContain('Reserva');
+});

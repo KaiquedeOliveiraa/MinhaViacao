@@ -6,7 +6,7 @@ import type { BusModel } from '../sim/types';
 import { busSvg } from './busSvg';
 import { promptDialog } from './dialog';
 import { h } from './dom';
-import { errorMessage, formatMoney } from './format';
+import { errorMessage, formatMoney, logoKey } from './format';
 import { toast } from './toast';
 
 const decimal = (n: number) => n.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -87,7 +87,7 @@ export function mountShopTab(el: HTMLElement, store: Store): () => void {
   function render() {
     const { company, cashCents } = store.getState();
     const offers = visibleOffers();
-    const next = JSON.stringify([company.primaryColor, company.secondaryColor, company.defaultLivery, company.logo, offers.map((o) => o.id), budget && cashCents < 0]);
+    const next = JSON.stringify([company.primaryColor, company.secondaryColor, company.defaultLivery, logoKey(company.logo), offers.map((o) => o.id), budget && cashCents < 0]);
     if (next !== renderKey) {
       renderKey = next;
       buttons.clear();

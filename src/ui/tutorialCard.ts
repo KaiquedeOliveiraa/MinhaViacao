@@ -7,6 +7,9 @@ import type { PanelTab } from './panel';
 export interface TutorialNav { openTab(tab: PanelTab): void; openNewLine(): void; }
 
 type ActiveStep = Exclude<TutorialStep, 'fim'>;
+const LINE_PLACED_TEXT = 'Passo 3 de 3 · Coloque o ônibus na sua linha pela aba Linhas.';
+const LINE_PLACED_ACTIONS: StepAction[] = [{ id: 'open-lines', label: 'Abrir Linhas', primary: true, run: (_s, nav) => nav.openTab('lines') }];
+
 interface StepAction { id: string; label: string; primary: boolean; run(store: Store, nav: TutorialNav): void; }
 
 const STEPS: Record<ActiveStep, { text: string; actions: StepAction[] }> = {
@@ -32,14 +35,16 @@ const STEPS: Record<ActiveStep, { text: string; actions: StepAction[] }> = {
  * e some quando o tutorial chega ao fim (ou é pulado).
  */
 export function mountTutorialCard(el: HTMLElement, store: Store, nav: TutorialNav): () => void {
-  let shown: TutorialStep | null = null;
+  let shown: string | null = null;
 
   function render() {
-    const step = store.getState().tutorial;
-    if (step === shown) return;
-    shown = step;
+    const { tutorial: step, lines } = store.getState();
+    // No passo 'linha', quem já tem linha (aberta antes de comprar o ônibus) só precisa colocar o ônibus nela.
+    const variant = step === 'linha' && lines.length > 0 ? 'linha-aberta' : step;
+    if (variant === shown) return;
+    shown = variant;
     if (step === 'fim') { el.replaceChildren(); return; }
-    const { text, actions } = STEPS[step];
+    const { text, actions } = variant === 'linha-aberta' ? { text: LINE_PLACED_TEXT, actions: LINE_PLACED_ACTIONS } : STEPS[step];
     el.replaceChildren(h('section', { class: 'card card-stripe tutorial-card', 'aria-label': 'Tutorial', dataset: { step } },
       h('p', { class: 'tutorial-text', dataset: { tutorialText: '' } }, text),
       h('div', { class: 'tutorial-actions' },

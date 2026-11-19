@@ -229,6 +229,13 @@ test('anunciar: o único ônibus não pode ser anunciado; ônibus que não exist
   expect(err(listBus(fresh(), testCatalog, 'bus-1', 2_000_000))).toBe('ultimo_onibus');
   expect(err(listBus(two(), testCatalog, 'fantasma', 2_000_000))).toBe('onibus_inexistente');
 });
+test('última não anunciada: nem anunciar nem vender o único ônibus fora de anúncio', () => {
+  const listed = ok(listBus(two(), testCatalog, 'bus-2', 2_000_000));
+  expect(err(listBus(listed, testCatalog, 'bus-1', 2_000_000))).toBe('ultimo_onibus'); // sobraria zero sem anúncio
+  expect(err(sellBus(listed, testCatalog, 'bus-1'))).toBe('ultimo_onibus');
+  expect(ok(sellBus(listed, testCatalog, 'bus-2')).buses.map((b) => b.id)).toEqual(['bus-1']); // vender o anunciado pode
+  expect(ok(listBus(listed, testCatalog, 'bus-2', 2_100_000)).buses[1]!.listing!.priceCents).toBe(2_100_000); // trocar o preço pode
+});
 test('retirar o anúncio', () => {
   const listed = ok(listBus(two(), testCatalog, 'bus-2', 2_000_000));
   const s = ok(unlistBus(listed, testCatalog, 'bus-2'));

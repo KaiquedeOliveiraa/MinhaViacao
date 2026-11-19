@@ -31,3 +31,11 @@ test('segunda aba não joga', async () => {
   expect(r.textContent).toContain('O jogo já está aberto em outra aba');
   expect(r.querySelector('button')).toBeNull();
 });
+test('?galeria abre mesmo com o jogo aberto em outra aba (não usa a trava)', async () => {
+  window.history.pushState({}, '', '/?galeria');
+  try {
+    const r = root(); await boot(r, { catalog: testCatalog, kv: memoryKv(), locks: busy });
+    expect(r.textContent).not.toContain('O jogo já está aberto em outra aba');
+    expect(r.childElementCount).toBeGreaterThan(0);
+  } finally { window.history.pushState({}, '', '/'); }
+});

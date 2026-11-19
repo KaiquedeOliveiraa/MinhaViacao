@@ -3,7 +3,7 @@ import { expect, test } from 'vitest';
 import { createStore } from '../game/store';
 import { buyBus } from '../sim/actions';
 import { createGame } from '../sim/newGame';
-import { testCatalog, testCompany } from '../sim/testkit';
+import { startedGame, testCatalog, testCompany } from '../sim/testkit';
 import type { TutorialStep } from '../sim/types';
 import type { PanelTab } from './panel';
 import { mountTutorialCard } from './tutorialCard';
@@ -76,3 +76,16 @@ test('desmontar tira o cartão e para de ouvir o store', () => {
   store.dispatch((s, c) => buyBus(s, c, { modelId: 'mini' }));
   expect(el.querySelector('.tutorial-card')).toBeNull();
 });
+
+test('passo linha com linha já aberta manda colocar o ônibus pela aba Linhas', () => {
+  const { store, el, calls } = mount('linha');
+  expect(text(el)).toContain('Abra a sua primeira linha');
+  expect(el.querySelector('[data-tutorial-action="open-lines"]')).toBeNull();
+  store.replace({ ...startedGameWithLine(), tutorial: 'linha' });
+  expect(text(el)).toBe('Passo 3 de 3 · Coloque o ônibus na sua linha pela aba Linhas.');
+  expect(el.querySelector('[data-tutorial-action="new-line"]')).toBeNull();
+  expect(el.querySelector('[data-tutorial-action="skip"]')).not.toBeNull();
+  click('[data-tutorial-action="open-lines"]', el);
+  expect(calls).toEqual(['tab:lines']);
+});
+const startedGameWithLine = () => startedGame(testCatalog);

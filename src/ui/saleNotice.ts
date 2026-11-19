@@ -14,6 +14,7 @@ export function watchListingSales(
   let previous = snapshot();
   const offChange = store.on('change', () => { previous = snapshot(); });
   const offTick = store.on('tick', () => {
+    if (![...previous.values()].some((b) => b.price !== null)) return; // sem anúncios, nada a detectar
     const now = store.getState().buses;
     const ids = new Set(now.map((b) => b.id));
     for (const [id, bus] of previous) {

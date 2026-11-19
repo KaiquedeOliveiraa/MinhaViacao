@@ -38,3 +38,17 @@ test('sem linhas: estado vazio', () => {
   expect(el.textContent).toContain('Nenhuma linha ainda.');
   expect(el.querySelector('table')).toBeNull();
 });
+
+test('quando o anúncio vende no tick, o ônibus some da coluna Veículos', async () => {
+  const { buyBus, listBus, assignBus } = await import('../sim/actions');
+  const { sellNowCents } = await import('../sim/market');
+  const { store, el } = setup(5_000_000);
+  store.dispatch((s, c) => buyBus(s, c, { modelId: 'mini', name: 'Reserva' }));
+  store.dispatch((s, c) => assignBus(s, c, 'bus-2', 'alfa-beta'));
+  store.dispatch((s, c) => listBus(s, c, 'bus-2', sellNowCents(c, s.buses[1]!, s.clockMinutes)));
+  mountListTab(el, store);
+  expect(el.textContent).toContain('Reserva');
+  for (let i = 0; i < 400 && store.getState().buses.length > 1; i++) store.advance(60);
+  expect(store.getState().buses).toHaveLength(1);
+  expect(el.textContent).not.toContain('Reserva');
+});
