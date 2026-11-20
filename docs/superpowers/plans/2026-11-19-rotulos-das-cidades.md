@@ -55,3 +55,49 @@ Visual: rótulos das não jogáveis em cinza discreto (token novo `--map-town-la
 - [ ] **Step 6: Medição:** `npm run build && PW_CHANNEL=msedge npm run measure:map` três vezes; anotar números; p95 não pode ficar acima da referência (7,0–7,1 ms). Se piorar, investigar antes de seguir.
 - [ ] **Step 7:** e2e: no celular, os rótulos das 4 jogáveis estão visíveis, dentro da tela e sem se sobrepor (comparar `getBoundingClientRect`). `npm test`, `npm run build`, e2e passam.
 - [ ] **Step 8: Commit** `feat: nomes das cidades no mapa por zoom, sem colisão nem corte`.
+
+### Task 2: Convencional e rodoviário redesenhados pelas referências de proporção
+
+Pedido do Kaique (19/11): refazer os SVGs seguindo proporção e silhueta das referências (comprimento × altura, posição e tamanho das janelas, rodas, para-brisa, saias), mantendo as camadas e as 4 pinturas; comparar por captura da galeria e iterar até 3 vezes por tipo; nomes fictícios; nada de logo, nome de empresa/fabricante/modelo, texto ou grafismo das referências.
+
+Referências (só consulta local, ignoradas pelo git — NUNCA commitar nem copiar para outro lugar do repositório):
+- Convencional urbano: `docs/referencias/Convencional urbano.png` (desenho de terceiros, vista lateral dos dois lados + frente/traseira).
+- Rodoviário de um andar: `docs/referencias/Rodoviário de um andar.png` (base da silhueta) e `docs/referencias/Rodoviário de um andar 2.png` (apoio).
+- Micro e van: SEM referência nesta rodada → desenho atual mantido (registrar "aguardam referência").
+
+**Files:**
+- Modify: `src/ui/busSvg.ts` (silhuetas `conv` e `rodo`), `src/ui/busSvg.test.ts`, `README.md` (créditos: linha exata `Referências de proporção: RJF Desenhos de ônibus (Ramon França)`)
+
+**Interfaces:** `busSvg(art)` e o `viewBox` 320×120 inalterados; camadas `data-region` iguais (body, paint, stripe, skirt, windows, lights, logo, wheels). O número de eixos e a razão comprimento ÷ altura passam a seguir a referência base de cada tipo (medir na imagem: comprimento total ÷ altura da carroceria sem rodas, posição dos eixos como fração do comprimento, altura da faixa de janelas, recuo do para-brisa). Atualizar o teste de proporção com os valores medidos (anotar no relatório como mediu).
+
+- [ ] **Step 1:** Medir as referências (proporções, eixos, janelas) e anotar no relatório.
+- [ ] **Step 2:** Ajustar os testes de proporção/eixos para os valores medidos; ver falhar.
+- [ ] **Step 3:** Redesenhar `conv` e `rodo`; galeria (`?galeria`) lado a lado com a referência em captura; até 3 iterações por tipo; anotar o que mudou em cada uma.
+- [ ] **Step 4:** README (créditos). `npm test`, `npm run build`, e2e passam.
+- [ ] **Step 5: Commit** `feat: convencional e rodoviário redesenhados pelas proporções de referência`.
+
+### Task 3: Pinturas inspiradas em viações conhecidas na criação (opção a)
+
+Pedido do Kaique (19/11): na criação da viação, abaixo das pinturas padrão, pinturas pré-definidas inspiradas em Catarinense, Reunidas, Gontijo, Águia Branca, Cometa, 1001 e Guanabara, com cores e formas PRÓPRIAS, sem reproduzir identidade visual real e sem logotipos; nomes num único arquivo de dados.
+
+**Files:**
+- Modify: `src/data/rivals.ts` (continua o ÚNICO arquivo com nomes reais: acrescentar `LIVERY_PRESETS`), `src/ui/createCompany.ts`, `src/ui/createCompany.test.ts`, `src/ui/styles.css`
+- Test: `src/data/rivals.test.ts` ou o teste existente dos rivais
+
+**Interfaces:**
+- `export interface LiveryPreset { id: string; inspiredBy: string; primary: string; secondary: string; livery: LiveryStyle }` e `export const LIVERY_PRESETS: readonly LiveryPreset[]` (7 itens, na ordem: Catarinense, Reunidas, Gontijo, Águia Branca, Cometa, 1001, Guanabara; `inspiredBy` é o texto mostrado, ex.: "Catarinense").
+- Cores: tons próprios, deliberadamente diferentes dos oficiais (outro matiz/saturação/combinação), em hex `#rrggbb` válido; estilo entre os 4 existentes (`plain`, `stripe`, `diagonal`, `wave`). Comentário no arquivo explicando que as cores são próprias e não reproduzem a identidade real.
+- UI: seção "Inspiradas em viações conhecidas" logo abaixo de "Pintura padrão": um botão por preset com a miniatura (`liveryThumb`) nas cores do preset e o texto "Inspirada na <nome>" (ou "no" quando soar melhor — usar campo opcional `article?: 'na' | 'no'`); tocar aplica as duas cores e o estilo ao formulário (o jogador ainda pode mudar tudo depois). Nada de logo.
+- Também no modo "Editar identidade" (mesma tela).
+
+- [ ] **Step 1: Testes:** 7 presets, ids únicos, cores válidas (`isValidColor`), estilo válido (`isValidLivery`); na tela, tocar um preset muda as cores e o estilo do estado e da prévia, e o envio cria a empresa com eles; nomes vêm de `LIVERY_PRESETS` (sem literal de nome real nos testes).
+- [ ] **Step 2:** Implementar; conferir em 360 px sem rolagem horizontal (captura).
+- [ ] **Step 3:** `npm test`, `npm run build`, e2e passam. **Commit** `feat: pinturas inspiradas em viações conhecidas na criação`.
+
+### Task 4 (EXTRA, só com 1–3 concluídas e verdes): Ônibus double deck (só o desenho)
+
+Referências: `docs/referencias/ONIBUS DD.jpg` (base da silhueta) e `docs/referencias/ONIBUS DD 2.png` (apoio de detalhes). Mesmas regras de uso.
+
+**Interfaces:** `BusShape` ganha `'dd'`; `BUS_SHAPES` inclui `'dd'`; silhueta de dois andares (duas faixas de janelas, eixos conforme a referência base), camadas e as 4 pinturas funcionando; aparece na galeria. NÃO entra no catálogo/loja (sem mecânica nova nesta rodada).
+
+- [ ] **Step 1:** Testes (camadas, pinturas, eixos, proporção medida). **Step 2:** Desenho + galeria, até 3 iterações. **Step 3:** `npm test`, `npm run build`, e2e. **Commit** `feat: desenho do ônibus double deck na galeria`.
