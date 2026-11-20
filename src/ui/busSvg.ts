@@ -31,10 +31,14 @@ interface Silhouette {
   /** traseira, dianteira, teto, base da carroceria e chão */
   x0: number; x1: number; top: number; bottom: number; ground: number;
   wheelR: number;
+  /** folga entre o pneu e a borda da cava (padrão 3,5) */
+  archGap?: number;
   axles: number[];
   rearR: number;
   /** trecho do contorno do fim do teto até a base dianteira */
   front: string;
+  /** trecho do contorno da base traseira de volta ao início do teto (padrão: cantos arredondados com rearR) */
+  rear?: string;
   /** topo das janelas e linha de cintura (base das janelas) */
   winTop: number; belt: number;
   /** vidros (para-brisa, janelas e portas), já com cantos arredondados */
@@ -46,9 +50,13 @@ interface Silhouette {
   logoX: number;
   headY: number;
   tail: [number, number];
-  roofUnit?: string;
   markers?: number[];
-  grille?: boolean;
+  /** altura das lanternas laterais (padrão: 5,5 acima da base) */
+  markerY?: number;
+  /** grade do motor traseiro: x, y, largura e altura */
+  grille?: [number, number, number, number];
+  /** altura da saia escura (padrão 11) */
+  skirtH?: number;
 }
 
 const f = (n: number) => Math.round(n * 100) / 100;
@@ -79,10 +87,10 @@ function paneRow(from: number, to: number, n: number, y: number, h: number, gap 
 }
 
 /** Porta de ônibus: duas folhas de vidro e o vinco em volta. */
-function busDoor(x: number, w: number, winTop: number, bottom: number): { glass: string; seam: string } {
+function busDoor(x: number, w: number, winTop: number, bottom: number, glassBottom = bottom - 16): { glass: string; seam: string } {
   const leaf = w / 2 - 2;
   const y = winTop + 1;
-  const h = bottom - 16 - y;
+  const h = glassBottom - y;
   return {
     glass: `${rr(x + 1.5, y, leaf, h, 2)} ${rr(x + w / 2 + 0.5, y, leaf, h, 2)}`,
     seam: rr(x, winTop - 2, w, bottom - 4 - (winTop - 2), 2.5),
@@ -125,52 +133,106 @@ function micro(): Silhouette {
   };
 }
 
-function conv(): Silhouette {
-  const x0 = 15, x1 = 305, top = GROUND - (x1 - x0) / 3.6, bottom = 100;
-  const winTop = top + 8.5, belt = 67;
-  const front = busDoor(267, 24, winTop, bottom);
-  const middle = busDoor(150, 24, winTop, bottom);
+/**
+ * Converte pixels de uma referência de proporção (vista lateral) em coordenadas do desenho:
+ * a dianteira da referência vai para x1 e o chão (base do pneu) para GROUND, na mesma escala nos dois eixos.
+ */
+function refScale(ref: { front: number; rear: number; ground: number }, x0: number, x1: number) {
+  const k = (x1 - x0) / Math.abs(ref.front - ref.rear);
+  const dir = Math.sign(ref.front - ref.rear); // a referência pode ter a dianteira à esquerda
   return {
-    x0, x1, top, bottom, ground: GROUND, wheelR: 13.5, axles: [84, 248], rearR: 9,
-    front: `H${x1 - 13} Q${x1 - 3} ${f(top)} ${x1 - 2} ${f(top + 10)} L${x1} ${bottom - 14} V${bottom - 6} Q${x1} ${bottom} ${x1 - 6} ${bottom}`,
-    winTop, belt,
-    glass: [
-      roundedPoly([[x1 - 9, top - 1], [x1 + 3, top - 1], [x1 + 3, bottom - 24], [x1 - 5, bottom - 24]], 1.5),
-      front.glass, middle.glass,
-      paneRow(x0 + 8, 146, 3, winTop, belt - 1.5 - winTop),
-      paneRow(178, 263, 2, winTop, belt - 1.5 - winTop),
-    ].join(' '),
-    seams: `${front.seam} ${middle.seam}`,
-    logoX: 204, headY: bottom - 21, tail: [bottom - 40, bottom - 17],
-    roofUnit: roundedPoly([[94, top + 2], [101, top - 4], [171, top - 4], [178, top + 2]], 2.5),
+    x: (px: number) => f(x1 - (ref.front - px) * dir * k),
+    y: (py: number) => f(GROUND - (ref.ground - py) * k),
+    len: (d: number) => f(d * k),
   };
 }
 
-function rodo(): Silhouette {
-  const x0 = 10, x1 = 310, top = GROUND - (x1 - x0) / 3.4, bottom = 99;
-  const winTop = top + 8, belt = 63;
-  const door = busDoor(266, 22, winTop, bottom);
+/**
+ * Convencional urbano de motor dianteiro. Proporções da referência "Convencional urbano", vista do lado das portas
+ * (218 px de comprimento, traseira em x 15, dianteira em x 233, teto y 12, base y 70, chão y 78): balanço dianteiro
+ * curto com a porta dianteira à frente do eixo, porta traseira atrás do eixo traseiro, canto de baixo da traseira chanfrado.
+ */
+function conv(): Silhouette {
+  const x0 = 26, x1 = 294;
+  const r = refScale({ front: 233, rear: 15, ground: 78 }, x0, x1);
+  const top = r.y(12), bottom = r.y(70);
+  const winTop = r.y(18), belt = r.y(39);
+  const doorTop = r.y(24);
   const paneH = belt - 1.5 - winTop;
-  const bays = [120, 156, 192].map((x) => rr(x, belt + 6, 33, bottom - 13 - belt - 6, 2)).join(' ');
+  // janelas urbanas: vidro de cima e de baixo separados por um trilho escuro (a moldura aparece entre eles)
+  const rail = r.y(28.5);
+  const sash = (from: number, to: number, n: number, gap = 5) => `${paneRow(from, to, n, winTop, rail - 0.7 - winTop, gap)} ${paneRow(from, to, n, rail + 0.7, belt - 1.5 - rail - 0.7, gap)}`;
+  const frontDoor = busDoor(r.x(204), r.len(20), doorTop, bottom, bottom - 9);
+  const rearDoor = busDoor(r.x(48), r.len(24), doorTop, bottom, bottom - 9);
   return {
-    x0, x1, top, bottom, ground: GROUND, wheelR: 14, axles: [64, 98, 246], rearR: 10,
-    front: `H${x1 - 30} C${x1 - 12} ${f(top)} ${x1 - 5} ${f(top + 9)} ${x1 - 3} ${f(top + 26)} L${x1} ${bottom - 14} V${bottom - 6} Q${x1} ${bottom} ${x1 - 6} ${bottom}`,
+    x0, x1, top, bottom, ground: GROUND, wheelR: r.len(11), archGap: r.len(1), axles: [r.x(87), r.x(189)], rearR: 3,
+    front: `H${x1 - 6} Q${x1} ${top} ${x1} ${f(top + 6)} V${f(bottom - 3)} Q${x1} ${bottom} ${x1 - 3} ${bottom}`,
+    rear: `H${r.x(42)} C${r.x(30)} ${bottom} ${x0} ${r.y(67)} ${x0} ${r.y(64)} V${f(top + 3)} Q${x0} ${top} ${x0 + 3} ${top} Z`,
     winTop, belt,
+    frame: `${paneRow(r.x(21), r.x(47.5), 1, winTop, paneH)} ${paneRow(r.x(72) + 2, r.x(193), 4, winTop, paneH, r.len(3))}`,
     glass: [
-      roundedPoly([[x1 - 34, top - 1], [x1 + 3, top - 1], [x1 + 3, bottom - 25], [x1 - 6, bottom - 25], [x1 - 11, top + 16]], 2),
-      door.glass,
-      paneRow(x0 + 10, 259, 6, winTop, paneH, 2.5),
+      rr(r.x(225.7), r.y(23.5), r.x(233) - r.x(225.7) + 3, r.y(45.5) - r.y(23.5), 1.5), // para-brisa visto de lado (passa da frente; o recorte da carroceria corta)
+      rr(r.x(196.5), r.y(24.5), r.len(7), r.y(43) - r.y(24.5), 2), // janela estreita junto à porta dianteira
+      frontDoor.glass, rearDoor.glass,
+      sash(r.x(72) + 2, r.x(193), 4, r.len(3)),
+      sash(r.x(21), r.x(47.5), 1), // última janela, atrás da porta traseira
     ].join(' '),
-    frame: rr(x0 + 7, winTop - 2.5, 255 - x0, paneH + 5, 4),
-    seams: `${door.seam} ${bays}`,
-    logoX: 172, headY: bottom - 21, tail: [bottom - 44, bottom - 18],
-    markers: [130, 172, 214], grille: true,
+    seams: [
+      frontDoor.seam, rearDoor.seam,
+      `M${x0 + 2} ${r.y(16)} H${x1 - 4}`, // calha do teto
+      `M${x0} ${r.y(52)} H${x1}`, // friso baixo
+    ].join(' '),
+    // logo no meio do entre-eixos; farol na altura dos faróis da vista frontal; lanterna vermelha sobre branca na traseira
+    logoX: r.x((87 + 189) / 2), headY: r.y(55), tail: [r.y(52.5), r.y(60)], skirtH: 7,
+  };
+}
+
+/**
+ * Rodoviário de um andar, 4×2. Proporções da referência "Rodoviário de um andar"
+ * (1155 px de comprimento, teto y 80, base y 363, chão y 394,5): para-brisa inclinado que desce do teto,
+ * porta à frente do eixo dianteiro, janelas iguais, bagageiros entre os eixos e grade do motor na traseira.
+ */
+function rodo(): Silhouette {
+  const x0 = 8, x1 = 312;
+  const r = refScale({ front: 1238, rear: 83, ground: 394.5 }, x0, x1);
+  const top = r.y(80), bottom = r.y(363);
+  const winTop = r.y(105), belt = r.y(194);
+  const paneH = belt - winTop - 3;
+  const pane = ([a, b]: Pt) => rr(r.x(a), winTop + 1.5, r.x(b) - r.x(a), paneH, 2.5);
+  const panes: Pt[] = [[125, 204], [210, 289], [300, 424], [435, 559], [570, 694], [705, 829], [840, 964], [975, 1065], [1076, 1116]];
+  const poly = (pts: Pt[], rad: number) => roundedPoly(pts.map(([px, py]): Pt => [r.x(px), r.y(py)]), rad);
+  const bay = (px: number) => `M${r.x(px)} ${r.y(261)} V${r.y(357)}`;
+  return {
+    x0, x1, top, bottom, ground: GROUND, wheelR: r.len(45.5), archGap: r.len(8), axles: [r.x(360.5), r.x(1025.5)], rearR: 7,
+    front: `H${r.x(760)} C${r.x(900)} ${top} ${r.x(1030)} ${r.y(91)} ${r.x(1093)} ${r.y(100)} C${r.x(1135)} ${r.y(106)} ${r.x(1170)} ${r.y(120)} ${r.x(1186)} ${r.y(150)} `
+      + `C${r.x(1204)} ${r.y(186)} ${r.x(1234)} ${r.y(253)} ${x1} ${r.y(305)} V${r.y(340)} Q${x1} ${bottom} ${r.x(1222)} ${bottom}`,
+    rear: `H${r.x(140)} C${r.x(110)} ${bottom} ${r.x(87)} ${r.y(357)} ${x0} ${r.y(345)} V${r.y(150)} C${x0} ${r.y(118)} ${r.x(92)} ${r.y(84)} ${r.x(110)} ${top} Z`,
+    winTop, belt,
+    frame: [
+      rr(r.x(116), winTop, r.x(1072) - r.x(116), belt - winTop, 3),
+      poly([[1060, 105], [1120, 104], [1152, 112], [1174, 128], [1188, 152], [1211, 202], [1226, 250], [1235, 296], [1200, 302], [1118, 302], [1118, 194], [1060, 194]], 3),
+    ].join(' '),
+    glass: [
+      ...panes.map(pane),
+      rr(r.x(84), r.y(112), r.len(8), r.y(180) - r.y(112), 2), // vidro do canto traseiro
+      rr(r.x(1122), r.y(172), r.x(1182) - r.x(1122), r.y(297) - r.y(172), 3), // vidro da porta
+      // para-brisa: os pontos em x 1260 passam da frente (1238) de propósito; o recorte da carroceria corta o excesso
+      poly([[1128, 102], [1260, 102], [1260, 292], [1225, 292], [1213, 240], [1193, 180], [1160, 126]], 2),
+    ].join(' '),
+    seams: [
+      `M${r.x(86)} ${r.y(261)} H${r.x(1124)}`, // linha dos bagageiros
+      ...[208, 290, 441, 497, 656, 765, 791, 953].map(bay),
+      `M${r.x(1124)} ${r.y(300)} V${f(bottom - 1)} M${r.x(1198)} ${r.y(302)} L${r.x(1190)} ${f(bottom - 1)}`, // porta
+    ].join(' '),
+    logoX: r.x(645), headY: r.y(306), tail: [r.y(246), r.y(306)],
+    markers: [420, 620, 799, 932].map((px) => r.x(px)), markerY: r.y(311),
+    grille: [r.x(112), r.y(268), r.x(205) - r.x(112), r.y(349) - r.y(268)], skirtH: 6,
   };
 }
 
 export const BUS_SILHOUETTES: Readonly<Record<BusShape, Silhouette>> = { van: van(), micro: micro(), conv: conv(), rodo: rodo() };
 
-const archR = (s: Silhouette) => s.wheelR + 3.5;
+const archR = (s: Silhouette) => s.wheelR + (s.archGap ?? 3.5);
 const wheelY = (s: Silhouette) => s.ground - s.wheelR;
 /** meia-largura da cava na linha da base da carroceria */
 const archHalf = (s: Silhouette) => Math.sqrt(archR(s) ** 2 - Math.max(0, s.bottom - wheelY(s)) ** 2);
@@ -199,7 +261,8 @@ function archArcs(s: Silhouette, g: number[]): string {
 function bodyPath(s: Silhouette): string {
   const { x0, top, bottom, rearR: r } = s;
   const arches = axleGroups(s).reverse().map((g) => archArcs(s, g)).join(' ');
-  return `M${x0 + r} ${f(top)} ${s.front} ${arches} H${x0 + 5} Q${x0} ${bottom} ${x0} ${bottom - 5} V${f(top + r)} Q${x0} ${f(top)} ${x0 + r} ${f(top)} Z`;
+  const rear = s.rear ?? `H${x0 + 5} Q${x0} ${bottom} ${x0} ${f(bottom - 5)} V${f(top + r)} Q${x0} ${f(top)} ${x0 + r} ${f(top)} Z`;
+  return `M${x0 + r} ${f(top)} ${s.front} ${arches} ${rear}`;
 }
 
 let clipCounter = 0;
@@ -253,10 +316,12 @@ function paintZones(art: BusArt, s: Silhouette, bodyClip: string): SVGElement {
   g.appendChild(svg('rect', { x: s.x0, y: s.belt + 1.5, width: len, height: 1.6, fill: SHADE, opacity: 0.2 }));
   // vincos de portas e bagageiros
   g.appendChild(svg('path', { d: s.seams, fill: 'none', stroke: SHADE, 'stroke-opacity': 0.28, 'stroke-width': 1 }));
-  // grade do motor (traseira)
+  // grade do motor (traseira): frisos verticais
   if (s.grille) {
-    const d = [0, 4, 8].map((dy) => `M${s.x0 + 5} ${s.bottom - 32 + dy} H${s.x0 + 30}`).join(' ');
-    g.appendChild(svg('path', { d, stroke: SHADE, 'stroke-opacity': 0.35, 'stroke-width': 1.6, 'stroke-linecap': 'round' }));
+    const [gx, gy, gw, gh] = s.grille;
+    const n = Math.floor(gw / 2.6);
+    const d = Array.from({ length: n }, (_, i) => `M${f(gx + 1.3 + i * 2.6)} ${f(gy)} v${f(gh)}`).join(' ');
+    g.appendChild(svg('path', { d, stroke: SHADE, 'stroke-opacity': 0.4, 'stroke-width': 1.3, 'stroke-linecap': 'round' }));
   }
   // borda das cavas de roda
   const lips = axleGroups(s).map((grp) => `M${f(grp.at(-1)! + archHalf(s))} ${s.bottom} ${archArcs(s, grp).replace(/^H[^A]*/, '')}`).join(' ');
@@ -266,9 +331,10 @@ function paintZones(art: BusArt, s: Silhouette, bodyClip: string): SVGElement {
 
 function skirt(art: BusArt, s: Silhouette, bodyClip: string): SVGElement {
   const { x0, x1, bottom } = s;
+  const h = s.skirtH ?? 11;
   const g = svg('g', { 'data-region': 'skirt', fill: darken(art.primary, 0.25), 'clip-path': `url(#${bodyClip})` });
-  g.appendChild(svg('rect', { x: x0 - 2, y: bottom - 11, width: x1 - x0 + 4, height: 12 }));
-  g.appendChild(svg('path', { d: `${rr(x1 - 14, bottom - 9, 16, 10, 2)} ${rr(x0 - 2, bottom - 9, 14, 10, 2)}`, fill: BUMPER }));
+  g.appendChild(svg('rect', { x: x0 - 2, y: f(bottom - h), width: x1 - x0 + 4, height: h + 1 }));
+  g.appendChild(svg('path', { d: `${rr(x1 - 14, bottom - h + 2, 16, h - 1, 2)} ${rr(x0 - 2, bottom - h + 2, 14, h - 1, 2)}`, fill: BUMPER }));
   return g;
 }
 
@@ -296,7 +362,7 @@ function lights(s: Silhouette): SVGElement {
   g.appendChild(svg('path', { d: rr(x1 - 11, s.headY + 0.5, 3, 4, 1), fill: SIGNAL }));
   g.appendChild(svg('path', { d: rr(x0 - 1, t0, 4, t1 - t0, 1.6), fill: TAILLIGHT }));
   g.appendChild(svg('path', { d: rr(x0 - 1, t1 + 1.5, 4, 3.5, 1), fill: SIGNAL }));
-  for (const x of s.markers ?? []) g.appendChild(svg('circle', { cx: x, cy: s.bottom - 5.5, r: 1.4, fill: SIGNAL }));
+  for (const x of s.markers ?? []) g.appendChild(svg('circle', { cx: x, cy: f(s.markerY ?? s.bottom - 5.5), r: 1.4, fill: SIGNAL }));
   return g;
 }
 
@@ -357,7 +423,6 @@ export function busSvg(art: BusArt): SVGSVGElement {
   root.appendChild(svg('ellipse', { cx: (s.x0 + s.x1) / 2, cy: s.ground + 1, rx: (s.x1 - s.x0) / 2 + 4, ry: 4, fill: SHADE, opacity: 0.4 }));
   const wells = axleGroups(s).map((g) => `M${f(g.at(-1)! + archHalf(s))} ${s.bottom} ${archArcs(s, g).replace(/^H[^A]*/, '')} Z`).join(' ');
   root.appendChild(svg('path', { d: wells, fill: WHEEL_WELL }));
-  if (s.roofUnit) root.appendChild(svg('path', { d: s.roofUnit, fill: darken(art.primary, 0.12) }));
   root.appendChild(svg('path', { 'data-region': 'body', d, fill: art.primary }));
   root.appendChild(paintZones(art, s, bodyClip));
   root.appendChild(skirt(art, s, bodyClip));

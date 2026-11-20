@@ -35,19 +35,45 @@ test('cada forma × cada pintura tem as camadas separadas, com as cores da empre
   }
 });
 
-test('o rodoviário tem 3 rodas e os outros 2', () => {
+test('todas as formas têm 2 eixos (o rodoviário de referência é 4×2)', () => {
   const wheels = (m: BusShape) => busSvg(art({ shape: m })).querySelectorAll('[data-region="wheels"] circle.tire').length;
-  expect(BUS_SHAPES.map(wheels)).toEqual([2, 2, 2, 3]);
+  expect(BUS_SHAPES.map(wheels)).toEqual([2, 2, 2, 2]);
 });
 
-test('proporções reais: comprimento ÷ altura de cada forma', () => {
-  const target: Record<BusShape, number> = { van: 2.4, micro: 3.0, conv: 3.6, rodo: 3.4 };
+/**
+ * Medidas tiradas das referências de proporção (docs/referencias, fora do git), em pixels da imagem:
+ * convencional: vista do lado das portas, 218 px (traseira x 15, dianteira x 233), teto y 12, base da carroceria y 70,
+ *   chão (base do pneu) y 78, pneu de raio 11, eixos a 44 e 146 px da dianteira, faixa de janelas de y 18 a y 39;
+ * rodoviário: 1155 px (x 83→1238), teto y 80, base y 363, chão y 394,5, pneu de raio 45,5,
+ *   eixos a 212,5 e 877,5 px da dianteira, faixa de janelas de y 105 a y 194.
+ */
+const REF = {
+  conv: { total: 218 / 66, body: 218 / 58, axles: [44 / 218, 146 / 218], winTop: 6 / 66, belt: 27 / 66, wheelR: 11 / 66 },
+  rodo: { total: 1155 / 314.5, body: 1155 / 283, axles: [212.5 / 1155, 877.5 / 1155], winTop: 25 / 314.5, belt: 114 / 314.5, wheelR: 45.5 / 314.5 },
+};
+const near = (a: number, b: number, tol: number, where: string) => expect(Math.abs(a - b), `${where}: ${a} ≈ ${b}`).toBeLessThan(tol);
+
+test('proporções: comprimento ÷ altura até o chão de cada forma', () => {
+  const target: Record<BusShape, number> = { van: 2.4, micro: 3.0, conv: REF.conv.total, rodo: REF.rodo.total };
   for (const shape of BUS_SHAPES) {
     const s = BUS_SILHOUETTES[shape];
-    expect((s.x1 - s.x0) / (s.ground - s.top), shape).toBeCloseTo(target[shape], 1);
+    near((s.x1 - s.x0) / (s.ground - s.top), target[shape], 0.05, shape);
   }
   // o rodoviário é o mais alto (piso mais alto)
   expect(Math.min(...BUS_SHAPES.map((m) => BUS_SILHOUETTES[m].top))).toBe(BUS_SILHOUETTES.rodo.top);
+});
+
+test('convencional e rodoviário seguem a referência: carroceria, eixos, janelas e rodas', () => {
+  for (const shape of ['conv', 'rodo'] as const) {
+    const s = BUS_SILHOUETTES[shape], ref = REF[shape];
+    const len = s.x1 - s.x0, hgt = s.ground - s.top;
+    near(len / (s.bottom - s.top), ref.body, 0.05, `${shape} carroceria sem rodas`);
+    const fromFront = s.axles.map((a) => (s.x1 - a) / len).sort((p, q) => p - q);
+    fromFront.forEach((k, i) => near(k, ref.axles[i]!, 0.01, `${shape} eixo ${i + 1}`));
+    near((s.winTop - s.top) / hgt, ref.winTop, 0.01, `${shape} topo das janelas`);
+    near((s.belt - s.top) / hgt, ref.belt, 0.01, `${shape} base das janelas`);
+    near(s.wheelR / hgt, ref.wheelR, 0.01, `${shape} raio da roda`);
+  }
 });
 
 test('modelo desconhecido lança erro', () => { expect(() => busSvg(art({ shape: 'jato' as BusShape }))).toThrow(); });
