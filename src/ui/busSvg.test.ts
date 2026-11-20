@@ -1,14 +1,15 @@
 // @vitest-environment jsdom
 import { expect, test } from 'vitest';
 import type { BusShape, LiveryStyle } from '../sim/types';
+import { catalog } from '../sim/catalog';
 import { BUS_SHAPES, BUS_SILHOUETTES, busSvg, liveryThumb, type BusArt } from './busSvg';
 
 const LIVERIES: LiveryStyle[] = ['plain', 'stripe', 'diagonal', 'wave'];
 const art = (over: Partial<BusArt> = {}): BusArt => ({ shape: 'micro', primary: '#ff7a00', secondary: '#ffffff', livery: 'diagonal', ...over });
 const region = (svg: SVGSVGElement, name: string) => svg.querySelector(`[data-region="${name}"]`);
 
-test('as 4 formas incluem a van', () => {
-  expect([...BUS_SHAPES]).toEqual(['van', 'micro', 'conv', 'rodo']);
+test('as 5 formas incluem a van e o double deck (este só na galeria)', () => {
+  expect([...BUS_SHAPES]).toEqual(['van', 'micro', 'conv', 'rodo', 'dd']);
 });
 
 test('cada forma × cada pintura tem as camadas separadas, com as cores da empresa', () => {
@@ -35,9 +36,9 @@ test('cada forma × cada pintura tem as camadas separadas, com as cores da empre
   }
 });
 
-test('todas as formas têm 2 eixos (o rodoviário de referência é 4×2)', () => {
+test('eixos: 2 em cada forma de um andar (o rodoviário de referência é 4×2) e 4 no double deck (8×2)', () => {
   const wheels = (m: BusShape) => busSvg(art({ shape: m })).querySelectorAll('[data-region="wheels"] circle.tire').length;
-  expect(BUS_SHAPES.map(wheels)).toEqual([2, 2, 2, 2]);
+  expect(BUS_SHAPES.map(wheels)).toEqual([2, 2, 2, 2, 4]);
 });
 
 /**
@@ -45,26 +46,38 @@ test('todas as formas têm 2 eixos (o rodoviário de referência é 4×2)', () =
  * convencional: vista do lado das portas, 218 px (traseira x 15, dianteira x 233), teto y 12, base da carroceria y 70,
  *   chão (base do pneu) y 78, pneu de raio 11, eixos a 44 e 146 px da dianteira, faixa de janelas de y 18 a y 39;
  * rodoviário: 1155 px (x 83→1238), teto y 80, base y 363, chão y 394,5, pneu de raio 45,5,
- *   eixos a 212,5 e 877,5 px da dianteira, faixa de janelas de y 105 a y 194.
+ *   eixos a 212,5 e 877,5 px da dianteira, faixa de janelas de y 105 a y 194;
+ * double deck ("ONIBUS DD", linha de cima, lado das portas, dianteira à direita): 511 px (traseira x 29, dianteira x 540),
+ *   teto y 18, base y 149, chão y 161,5, pneu de raio 18,5, eixos a 93,5, 138,5, 367 e 411,75 px da dianteira (8×2),
+ *   janelas de cima de y 23,5 a y 57,5 e de baixo de y 81 a y 114.
  */
 const REF = {
   conv: { total: 218 / 66, body: 218 / 58, axles: [44 / 218, 146 / 218], winTop: 6 / 66, belt: 27 / 66, wheelR: 11 / 66 },
   rodo: { total: 1155 / 314.5, body: 1155 / 283, axles: [212.5 / 1155, 877.5 / 1155], winTop: 25 / 314.5, belt: 114 / 314.5, wheelR: 45.5 / 314.5 },
+  dd: {
+    total: 511 / 143.5, body: 511 / 131, axles: [93.5 / 511, 138.5 / 511, 367 / 511, 411.75 / 511],
+    winTop: 5.5 / 143.5, belt: 96 / 143.5, wheelR: 18.5 / 143.5, decks: [39.5 / 143.5, 63 / 143.5],
+  },
 };
 const near = (a: number, b: number, tol: number, where: string) => expect(Math.abs(a - b), `${where}: ${a} ≈ ${b}`).toBeLessThan(tol);
 
 test('proporções: comprimento ÷ altura até o chão de cada forma', () => {
-  const target: Record<BusShape, number> = { van: 2.4, micro: 3.0, conv: REF.conv.total, rodo: REF.rodo.total };
+  const target: Record<BusShape, number> = { van: 2.4, micro: 3.0, conv: REF.conv.total, rodo: REF.rodo.total, dd: REF.dd.total };
   for (const shape of BUS_SHAPES) {
     const s = BUS_SILHOUETTES[shape];
     near((s.x1 - s.x0) / (s.ground - s.top), target[shape], 0.05, shape);
   }
-  // o rodoviário é o mais alto (piso mais alto)
-  expect(Math.min(...BUS_SHAPES.map((m) => BUS_SILHOUETTES[m].top))).toBe(BUS_SILHOUETTES.rodo.top);
+  // o double deck é o mais alto e cabe no viewBox; entre os de um andar, o rodoviário (piso mais alto)
+  expect(Math.min(...BUS_SHAPES.map((m) => BUS_SILHOUETTES[m].top))).toBe(BUS_SILHOUETTES.dd.top);
+  expect(BUS_SILHOUETTES.dd.top).toBeGreaterThan(2);
+  expect(BUS_SILHOUETTES.dd.x0).toBeGreaterThanOrEqual(2);
+  expect(BUS_SILHOUETTES.dd.x1).toBeLessThanOrEqual(318);
+  const oneDeck = BUS_SHAPES.filter((m) => m !== 'dd');
+  expect(Math.min(...oneDeck.map((m) => BUS_SILHOUETTES[m].top))).toBe(BUS_SILHOUETTES.rodo.top);
 });
 
-test('convencional e rodoviário seguem a referência: carroceria, eixos, janelas e rodas', () => {
-  for (const shape of ['conv', 'rodo'] as const) {
+test('convencional, rodoviário e double deck seguem a referência: carroceria, eixos, janelas e rodas', () => {
+  for (const shape of ['conv', 'rodo', 'dd'] as const) {
     const s = BUS_SILHOUETTES[shape], ref = REF[shape];
     const len = s.x1 - s.x0, hgt = s.ground - s.top;
     near(len / (s.bottom - s.top), ref.body, 0.05, `${shape} carroceria sem rodas`);
@@ -74,6 +87,14 @@ test('convencional e rodoviário seguem a referência: carroceria, eixos, janela
     near((s.belt - s.top) / hgt, ref.belt, 0.01, `${shape} base das janelas`);
     near(s.wheelR / hgt, ref.wheelR, 0.01, `${shape} raio da roda`);
   }
+  // double deck: base da faixa de janelas de cima e topo da de baixo
+  const dd = BUS_SILHOUETTES.dd, hgt = dd.ground - dd.top;
+  expect(dd.decks).toBeDefined();
+  dd.decks!.forEach((y, i) => near((y - dd.top) / hgt, REF.dd.decks[i]!, 0.01, `dd andar ${i + 1}`));
+});
+
+test('o double deck não entra no catálogo da loja', () => {
+  expect(catalog.models.some((m) => (m.shape as string) === 'dd')).toBe(false);
 });
 
 test('modelo desconhecido lança erro', () => { expect(() => busSvg(art({ shape: 'jato' as BusShape }))).toThrow(); });

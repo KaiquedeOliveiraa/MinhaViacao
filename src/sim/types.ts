@@ -10,7 +10,7 @@ export type LogoIconId =
   | 'star' | 'arrow' | 'chevrons' | 'diamond' | 'circles' | 'sun' | 'bird' | 'horse' | 'fish' | 'peaks' | 'waves' | 'compass';
 
 export interface City { id: CityId; ibge?: number; name: string; population: number; lat: number; lng: number; difficulty: Difficulty; }
-export type BusShape = 'van' | 'micro' | 'conv' | 'rodo';
+export type BusShape = 'van' | 'micro' | 'conv' | 'rodo' | 'dd';
 export type BusCategory = 'van' | 'micro' | 'onibus' | 'rodoviario';
 /** `priceCents` é o preço do modelo novo. */
 export interface BusModel { id: ModelId; name: string; category: BusCategory; shape: BusShape; seats: number; comfort: number; kmPerLiter: number; priceCents: number; }

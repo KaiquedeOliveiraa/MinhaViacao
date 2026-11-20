@@ -6,7 +6,7 @@ import { BUS_SHAPES, busSvg, liveryThumb } from './busSvg';
 import { h } from './dom';
 import { logoView } from './logoView';
 
-const SHAPE_NAMES: Record<BusShape, string> = { van: 'Van (rascunho)', micro: 'Micro', conv: 'Convencional', rodo: 'Rodoviário' };
+const SHAPE_NAMES: Record<BusShape, string> = { van: 'Van (rascunho)', micro: 'Micro', conv: 'Convencional', rodo: 'Rodoviário', dd: 'Double deck (galeria)' };
 const LIVERY_NAMES: Record<LiveryStyle, string> = { plain: 'lisa', stripe: 'faixa reta', diagonal: 'diagonal', wave: 'onda' };
 const ICONS = Object.keys(LOGO_ICONS) as LogoIconId[];
 const SCHEMES = [

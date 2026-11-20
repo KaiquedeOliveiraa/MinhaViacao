@@ -22,7 +22,8 @@ const SHADE = '#000000';
 
 const GROUND = 110;
 
-export const BUS_SHAPES: readonly BusShape[] = ['van', 'micro', 'conv', 'rodo'];
+/** 'dd' (double deck) só aparece na galeria: não está no catálogo nem na loja. */
+export const BUS_SHAPES: readonly BusShape[] = ['van', 'micro', 'conv', 'rodo', 'dd'];
 
 type Pt = [number, number];
 
@@ -41,6 +42,8 @@ interface Silhouette {
   rear?: string;
   /** topo das janelas e linha de cintura (base das janelas) */
   winTop: number; belt: number;
+  /** dois andares: base da faixa de janelas de cima e topo da faixa de baixo */
+  decks?: [number, number];
   /** vidros (para-brisa, janelas e portas), já com cantos arredondados */
   glass: string;
   /** moldura escura atrás das janelas (vidro colado, colunas finas) */
@@ -48,6 +51,8 @@ interface Silhouette {
   /** vincos de portas e painéis */
   seams: string;
   logoX: number;
+  /** centro e raio do selo do logo (padrão: entre a cintura e a saia) */
+  logoY?: number; logoR?: number;
   headY: number;
   tail: [number, number];
   markers?: number[];
@@ -230,7 +235,55 @@ function rodo(): Silhouette {
   };
 }
 
-export const BUS_SILHOUETTES: Readonly<Record<BusShape, Silhouette>> = { van: van(), micro: micro(), conv: conv(), rodo: rodo() };
+/**
+ * Rodoviário de dois andares (double deck), 8×2: dois eixos dianteiros e o truque traseiro. Proporções da referência
+ * "ONIBUS DD", linha de cima, lado das portas com a dianteira à direita (511 px de comprimento, traseira em x 29,
+ * dianteira em x 540, teto y 18, base y 149, chão y 161,5). Detalhes de apoio (porta, grade do motor) da "ONIBUS DD 2".
+ * Na escala do rodoviário não caberia nos 320 de largura: ocupa quase toda a largura (6 a 314) e fica o mais alto de todos.
+ */
+function dd(): Silhouette {
+  const x0 = 6, x1 = 314;
+  const r = refScale({ front: 540, rear: 29, ground: 161.5 }, x0, x1);
+  const top = r.y(18), bottom = r.y(149);
+  const rearR = r.len(19);
+  const poly = (pts: Pt[], rad: number) => roundedPoly(pts.map(([px, py]): Pt => [r.x(px), r.y(py)]), rad);
+  const vline = (px: number, y0: number, y1: number) => `M${r.x(px)} ${r.y(y0)} V${r.y(y1)}`;
+  return {
+    x0, x1, top, bottom, ground: GROUND, wheelR: r.len(18.5), archGap: r.len(2.5), rearR,
+    axles: [128.25, 173, 401.5, 446.5].map((px) => r.x(px)),
+    // frente: o teto desce numa curva e a frente inclina até o para-choque (x 540 a partir de y 112)
+    front: `H${r.x(468)} C${r.x(482)} ${top} ${r.x(497)} ${r.y(19.5)} ${r.x(507)} ${r.y(24.5)} C${r.x(512)} ${r.y(28)} ${r.x(521)} ${r.y(41)} ${r.x(526)} ${r.y(55.5)} `
+      + `C${r.x(531)} ${r.y(70)} ${r.x(537)} ${r.y(90)} ${x1} ${r.y(112)} V${r.y(146)} Q${x1} ${bottom} ${r.x(537)} ${bottom}`,
+    // traseira quase vertical (x 29), canto de cima arredondado e canto de baixo puxado até x 69
+    rear: `H${r.x(69)} C${r.x(45)} ${bottom} ${x0} ${r.y(147)} ${x0} ${r.y(141)} V${r.y(48)} C${x0} ${r.y(30)} ${r.x(33)} ${top} ${f(x0 + rearR)} ${top} Z`,
+    winTop: r.y(23.5), belt: r.y(114), decks: [r.y(57.5), r.y(81)],
+    glass: [
+      // andar de cima: faixa contínua que, na frente, desce até y 121 entre a faixa branca inclinada e a coluna
+      poly([[42.5, 23.5], [474, 23.5], [480, 24], [485, 25], [498, 28], [504, 35], [510, 45], [514, 55], [516, 60], [519, 70], [522, 80], [524, 90], [525, 100],
+        [526, 110], [527, 115], [526, 121.5], [514, 121.5], [502, 118.5], [497, 116.5], [490, 110], [486, 105], [482, 100], [479, 95], [475, 90], [471, 85],
+        [465, 80], [458, 75], [451, 70], [444, 65], [437, 60], [433, 57.5], [42.5, 57.5]], 2),
+      // para-brisa visto de lado, à frente da coluna; os pontos em x 560 passam da frente e o recorte da carroceria corta
+      poly([[487, 20.5], [497, 24], [503, 28], [508, 35], [514, 45], [518, 55], [521, 60], [523, 70], [525, 80], [527, 90], [529, 100], [530, 110], [532, 115],
+        [536, 117.5], [560, 117.5], [560, 10], [487, 10]], 1.5),
+      // andar de baixo: da traseira do truque até a ponta inclinada junto à faixa branca
+      poly([[186, 81], [432, 81], [438, 85], [444, 90], [450, 95], [454, 100], [457, 105], [461, 110], [463, 114], [186, 114]], 2),
+    ].join(' '),
+    seams: [
+      `M${r.x(31)} ${r.y(79.5)} H${r.x(186)}`, // painel traseiro, abaixo da faixa entre os andares
+      vline(107, 80, 146),
+      rr(r.x(50.5), r.y(87), r.len(16.5), r.len(11), 1.5), // respiro
+      ...[226, 282, 339, 368].map((px) => vline(px, 116.5, 145)), // bagageiros
+      vline(493, 118, 146), vline(526, 122, 146), // porta, à frente dos eixos dianteiros
+    ].join(' '),
+    // selo no painel traseiro (sem janelas no andar de baixo), entre o respiro e a faixa de baixo
+    logoX: r.x(146.5), logoY: r.y(101.5), logoR: 9.5,
+    headY: r.y(136.5), tail: [r.y(96), r.y(126)],
+    markers: [255, 315, 367].map((px) => r.x(px)), markerY: r.y(136.5),
+    grille: [r.x(45), r.y(107.5), r.x(77) - r.x(45), r.y(133.5) - r.y(107.5)], skirtH: 6,
+  };
+}
+
+export const BUS_SILHOUETTES: Readonly<Record<BusShape, Silhouette>> = { van: van(), micro: micro(), conv: conv(), rodo: rodo(), dd: dd() };
 
 const archR = (s: Silhouette) => s.wheelR + (s.archGap ?? 3.5);
 const wheelY = (s: Silhouette) => s.ground - s.wheelR;
@@ -314,6 +367,7 @@ function paintZones(art: BusArt, s: Silhouette, bodyClip: string): SVGElement {
   // brilho do teto e friso da cintura
   g.appendChild(svg('rect', { x: s.x0, y: f(s.top), width: len, height: 3.5, fill: GLASS_SHINE, opacity: 0.16 }));
   g.appendChild(svg('rect', { x: s.x0, y: s.belt + 1.5, width: len, height: 1.6, fill: SHADE, opacity: 0.2 }));
+  if (s.decks) g.appendChild(svg('rect', { x: s.x0, y: f(s.decks[0] + 1.5), width: len, height: 1.6, fill: SHADE, opacity: 0.2 }));
   // vincos de portas e bagageiros
   g.appendChild(svg('path', { d: s.seams, fill: 'none', stroke: SHADE, 'stroke-opacity': 0.28, 'stroke-width': 1 }));
   // grade do motor (traseira): frisos verticais
@@ -351,6 +405,7 @@ function windows(s: Silhouette, bodyClip: string, glassClip: string): SVGElement
   const sh = svg('g', { 'clip-path': `url(#${glassClip})` });
   sh.appendChild(svg('path', { d: shine, fill: GLASS_SHINE, opacity: 0.07 }));
   sh.appendChild(svg('rect', { x: s.x0, y: f(s.winTop - 1), width: s.x1 - s.x0 + 4, height: 3, fill: GLASS_SHINE, opacity: 0.06 }));
+  if (s.decks) sh.appendChild(svg('rect', { x: s.x0, y: f(s.decks[1] - 1), width: s.x1 - s.x0 + 4, height: 3, fill: GLASS_SHINE, opacity: 0.06 }));
   g.appendChild(sh);
   return g;
 }
@@ -386,8 +441,8 @@ function wheels(s: Silhouette): SVGElement {
 function logoBadge(logo: LogoRef, s: Silhouette, primary: string, secondary: string, id: string): SVGElement {
   const cx = s.logoX;
   const space = s.bottom - 11 - s.belt;
-  const cy = f(s.belt + space / 2 + 1);
-  const r = Math.min(11, space / 2 - 2);
+  const cy = s.logoY ?? f(s.belt + space / 2 + 1);
+  const r = s.logoR ?? Math.min(11, space / 2 - 2);
   const g = svg('g', { 'data-region': 'logo' });
   g.appendChild(svg('circle', { cx, cy, r: r + 1.5, fill: primary }));
   g.appendChild(svg('circle', { cx, cy, r, fill: secondary }));

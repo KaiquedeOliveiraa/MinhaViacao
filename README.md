@@ -78,6 +78,6 @@ A atribuição aparece no canto do mapa. `npm run measure:map` mede o mapa num c
 
 Os modelos de ônibus têm nomes inventados; o jogo não usa marcas reais de fabricantes (viações reais só como metas bloqueadas, veja acima).
 
-**Desenhos dos ônibus:** o convencional e o rodoviário seguem as proporções de desenhos de referência (comprimento × altura, posição dos eixos, faixa de janelas, para-brisa e portas), medidas na imagem e redesenhadas no traço do jogo, sem copiar traço, pintura, textos ou marcas. O micro e a van aguardam referência.
+**Desenhos dos ônibus:** o convencional e o rodoviário seguem as proporções de desenhos de referência (comprimento × altura, posição dos eixos, faixa de janelas, para-brisa e portas), medidas na imagem e redesenhadas no traço do jogo, sem copiar traço, pintura, textos ou marcas. O double deck (8×2) segue as mesmas regras, mas por enquanto só aparece na galeria: não está à venda. O micro e a van aguardam referência.
 
 Referências de proporção: RJF Desenhos de ônibus (Ramon França)
