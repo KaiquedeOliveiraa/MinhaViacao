@@ -228,3 +228,15 @@ test('rodoviário: portinholas com puxadores, para-lamas escuros, catadióptrico
   const simple = busSvg(art({ shape: 'rodo' }), { detail: 'simple' });
   for (const part of ['handles', 'arch-trim', 'trim', 'reflectors', 'markers', 'mullions']) expect(simple.querySelector(`[data-part="${part}"]`), part).toBeNull();
 });
+
+test('double deck: uma cava por eixo no tandem, respiro com aletas, lanternas retangulares e catadióptricos', () => {
+  const full = busSvg(art({ shape: 'dd' }));
+  // 4 eixos, 4 cavas separadas (lataria entre as rodas do tandem, como na referência)
+  expect(full.querySelector('[data-part="well-ring"]')!.getAttribute('d')!.match(/M/g)).toHaveLength(4);
+  expect(full.querySelector('[data-region="details"] [data-part="vents"]')).not.toBeNull();
+  expect(full.querySelector('[data-region="lights"] [data-part="markers"]')).not.toBeNull();
+  expect(full.querySelectorAll('[data-region="lights"] [data-part="reflectors"] path')).toHaveLength(2);
+  // o simples (mapa) não leva esses detalhes
+  const simple = busSvg(art({ shape: 'dd' }), { detail: 'simple' });
+  for (const part of ['vents', 'markers', 'reflectors']) expect(simple.querySelector(`[data-part="${part}"]`), part).toBeNull();
+});

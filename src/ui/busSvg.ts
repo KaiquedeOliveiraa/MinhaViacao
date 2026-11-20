@@ -106,6 +106,10 @@ interface Silhouette {
   reflectorY?: number;
   /** friso cromado decorativo (traço) */
   trim?: string;
+  /** cada eixo com a sua cava, mesmo nos eixos em tandem (lataria entre as rodas) */
+  splitArches?: boolean;
+  /** respiros com aletas horizontais (x, y, largura, altura) */
+  vents?: [number, number, number, number][];
 }
 
 interface Door { x: number; w: number; top: number }
@@ -334,6 +338,8 @@ function rodo(): Silhouette {
  * "ONIBUS DD", linha de cima, lado das portas com a dianteira à direita (511 px de comprimento, traseira em x 29,
  * dianteira em x 540, teto y 18, base y 149, chão y 161,5). Detalhes de apoio (porta, grade do motor) da "ONIBUS DD 2".
  * Na escala do rodoviário não caberia nos 320 de largura: ocupa quase toda a largura (6 a 314) e fica o mais alto de todos.
+ * Realismo: uma cava por eixo (lataria entre as rodas do tandem), lateral na cor da carroceria até a base, respiro com
+ * aletas e tampa do motor na traseira, lanternas retangulares e catadióptricos, retrovisor pendendo à frente do para-brisa.
  */
 function dd(): Silhouette {
   const x0 = 6, x1 = 314;
@@ -364,17 +370,19 @@ function dd(): Silhouette {
     ].join(' '),
     seams: [
       `M${r.x(31)} ${r.y(79.5)} H${r.x(186)}`, // painel traseiro, abaixo da faixa entre os andares
-      vline(107, 80, 146),
-      rr(r.x(50.5), r.y(87), r.len(16.5), r.len(11), 1.5), // respiro
+      vline(103, 80, 146), vline(72, 80, 146), `M${r.x(31)} ${r.y(102.5)} H${r.x(72)}`, // painéis traseiros (tampa do motor)
       ...[226, 282, 339, 368].map((px) => vline(px, 116.5, 145)), // bagageiros
       vline(493, 118, 146), vline(526, 122, 146), // porta, à frente dos eixos dianteiros
     ].join(' '),
     // selo no painel traseiro (sem janelas no andar de baixo), entre o respiro e a faixa de baixo
     logoX: r.x(146.5), logoY: r.y(101.5), logoR: 9.5,
     headY: r.y(136.5), tail: [r.y(96), r.y(126)],
-    markers: [255, 315, 367].map((px) => r.x(px)), markerY: r.y(136.5),
-    grille: [r.x(45), r.y(107.5), r.x(77) - r.x(45), r.y(133.5) - r.y(107.5)], skirtH: 6,
-    doors: [{ x: r.x(493), w: r.len(33), top: r.y(118) }], mirror: { at: [r.x(520), r.y(50)], head: [r.x(544), r.y(66)], h: r.len(22) },
+    markers: [255, 315, 367].map((px) => r.x(px)), markerY: r.y(136.5), markerW: r.len(6),
+    reflectors: [44, 92, 474].map((px) => r.x(px)), reflectorY: r.y(136),
+    vents: [[r.x(50.5), r.y(86.5), r.len(17), r.len(11)]], // respiro com aletas
+    grille: [r.x(44), r.y(107.5), r.x(70) - r.x(44), r.y(133.5) - r.y(107.5)], skirtH: 3, splitArches: true,
+    hatch: [r.x(198.5), r.y(127)], // portinhola logo atrás do truque (com as cavas separadas, o padrão cairia entre as rodas)
+    doors: [{ x: r.x(493), w: r.len(33), top: r.y(118) }], mirror: { at: [r.x(524), r.y(60)], head: [r.x(544), r.y(86)], h: r.len(25) },
     roof: [[r.x(120), 14, 1], [r.x(300), 14, 1]], clearance: [f(x0 + rearR + 2), r.x(455)], fleet: '7015', fleetAt: [x0 + 5, r.y(72)],
   };
 }
@@ -391,7 +399,7 @@ function axleGroups(s: Silhouette): number[][] {
   const groups: number[][] = [];
   for (const a of [...s.axles].sort((p, q) => p - q)) {
     const last = groups.at(-1);
-    if (last && a - last.at(-1)! < archHalf(s) * 2 + 6) last.push(a);
+    if (last && !s.splitArches && a - last.at(-1)! < archHalf(s) * 2 + 6) last.push(a);
     else groups.push([a]);
   }
   return groups;
@@ -534,6 +542,16 @@ function details(art: BusArt, s: Silhouette, bodyClip: string): SVGElement {
     const n = Math.floor(gw / 2.6);
     const d = Array.from({ length: n }, (_, i) => `M${f(gx + 1.3 + i * 2.6)} ${f(gy)} v${f(gh)}`).join(' ');
     c.appendChild(svg('path', { d, stroke: SHADE, 'stroke-opacity': 0.4, 'stroke-width': 1.3, 'stroke-linecap': 'round' }));
+  }
+  // respiros: vão escuro com aletas horizontais
+  if (s.vents?.length) {
+    const v = svg('g', { 'data-part': 'vents' });
+    v.appendChild(svg('path', { d: s.vents.map(([x, y, w, h]) => rr(x, y, w, h, 1)).join(' '), fill: WINDOW_FRAME, 'fill-opacity': 0.85 }));
+    v.appendChild(svg('path', {
+      d: s.vents.map(([x, y, w, h]) => Array.from({ length: Math.max(1, Math.floor(h / 1.6) - 1) }, (_, i) => `M${f(x + 1)} ${f(y + 1.6 * (i + 1))} h${f(w - 2)}`).join(' ')).join(' '),
+      stroke: RUB_RAIL, 'stroke-opacity': 0.35, 'stroke-width': 0.5,
+    }));
+    c.appendChild(v);
   }
   // portinhola de serviço (bocal, bateria): por padrão à frente da cava traseira
   const [hx, hy] = s.hatch ?? [axleGroups(s)[0]!.at(-1)! + archHalf(s) + 3, s.bottom - (s.skirtH ?? 11) - 7.5];
