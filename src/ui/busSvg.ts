@@ -18,7 +18,19 @@ const HEADLIGHT = '#fff3c4';
 const SIGNAL = '#f5a524';
 const TAILLIGHT = '#d9363e';
 const GLASS_SHINE = '#ffffff';
+const GLASS_TOP = '#2e3948';
+const GLASS_BOTTOM = '#0f1318';
+const SEAL = '#050608';
 const SHADE = '#000000';
+const TREAD = '#1e1c24';
+const WELL_LINER = '#1a1820';
+const MIRROR = '#141318';
+const MIRROR_EDGE = '#55535e';
+const HANDRAIL = '#b7bac2';
+const STEP = '#1b1a20';
+const STEP_EDGE = '#a3a6ae';
+const FLEET_DARK = '#16151b';
+const FLEET_LIGHT = '#ffffff';
 
 const GROUND = 110;
 
@@ -62,7 +74,20 @@ interface Silhouette {
   grille?: [number, number, number, number];
   /** altura da saia escura (padrão 11) */
   skirtH?: number;
+  /** portas de passageiros (x, largura e topo do vinco; vão até a base): degrau e corrimão */
+  doors?: Door[];
+  /** retrovisor: ponto de fixação na carroceria, topo do espelho (centro) e altura do espelho */
+  mirror: { at: Pt; head: Pt; h: number };
+  /** equipamentos no teto (ar-condicionado, escotilhas): início, comprimento e altura; entram no contorno */
+  roof: [number, number, number][];
+  /** luzes de posição no canto do teto: x da traseira e da dianteira */
+  clearance: [number, number];
+  /** número de frota fictício e onde fica (padrão: canto traseiro, logo abaixo da cintura) */
+  fleet: string;
+  fleetAt?: Pt;
 }
+
+interface Door { x: number; w: number; top: number }
 
 const f = (n: number) => Math.round(n * 100) / 100;
 
@@ -92,13 +117,14 @@ function paneRow(from: number, to: number, n: number, y: number, h: number, gap 
 }
 
 /** Porta de ônibus: duas folhas de vidro e o vinco em volta. */
-function busDoor(x: number, w: number, winTop: number, bottom: number, glassBottom = bottom - 16): { glass: string; seam: string } {
+function busDoor(x: number, w: number, winTop: number, bottom: number, glassBottom = bottom - 16): { glass: string; seam: string; door: Door } {
   const leaf = w / 2 - 2;
   const y = winTop + 1;
   const h = glassBottom - y;
   return {
     glass: `${rr(x + 1.5, y, leaf, h, 2)} ${rr(x + w / 2 + 0.5, y, leaf, h, 2)}`,
     seam: rr(x, winTop - 2, w, bottom - 4 - (winTop - 2), 2.5),
+    door: { x, w, top: winTop - 2 },
   };
 }
 
@@ -117,6 +143,7 @@ function van(): Silhouette {
     ].join(' '),
     seams: `M189.5 ${f(top + 3)} V95.5 H231 V64 ${rr(142.5, top + 4.5, 47, 95.5 - top - 4.5, 2.5)} M78 63.5 H142.5`,
     logoX: 166, headY: 67.5, tail: [42, 66],
+    mirror: { at: [223, 58], head: [228.5, 51.5], h: 5.5 }, roof: [[112, 24, 1.4]], clearance: [x0 + 6, 186], fleet: '1204',
   };
 }
 
@@ -135,6 +162,8 @@ function micro(): Silhouette {
     ].join(' '),
     seams: door.seam,
     logoX: 166, headY: bottom - 20, tail: [bottom - 38, bottom - 17],
+    doors: [door.door], mirror: { at: [x1 - 4, f(top + 9)], head: [x1 + 3, f(top + 12)], h: 8 },
+    roof: [[128, 54, 3]], clearance: [x0 + 5, x1 - 14], fleet: '2310',
   };
 }
 
@@ -189,6 +218,8 @@ function conv(): Silhouette {
     ].join(' '),
     // logo no meio do entre-eixos; farol na altura dos faróis da vista frontal; lanterna vermelha sobre branca na traseira
     logoX: r.x((87 + 189) / 2), headY: r.y(55), tail: [r.y(52.5), r.y(60)], skirtH: 7,
+    doors: [frontDoor.door, rearDoor.door], mirror: { at: [x1 - 1, f(top + 4)], head: [x1 + 5, f(top + 9)], h: 8 },
+    roof: [[r.x(70), 14, 1.3], [r.x(150), 14, 1.3]], clearance: [x0 + 4, x1 - 8], fleet: '1024',
   };
 }
 
@@ -232,6 +263,8 @@ function rodo(): Silhouette {
     logoX: r.x(645), headY: r.y(306), tail: [r.y(246), r.y(306)],
     markers: [420, 620, 799, 932].map((px) => r.x(px)), markerY: r.y(311),
     grille: [r.x(112), r.y(268), r.x(205) - r.x(112), r.y(349) - r.y(268)], skirtH: 6,
+    doors: [{ x: r.x(1124), w: r.len(74), top: r.y(160) }], mirror: { at: [r.x(1192), r.y(150)], head: [r.x(1250), r.y(178)], h: r.len(45) },
+    roof: [[r.x(330), r.len(70), 0.9], [r.x(700), r.len(70), 0.9]], clearance: [r.x(140), r.x(960)], fleet: '4108',
   };
 }
 
@@ -280,6 +313,8 @@ function dd(): Silhouette {
     headY: r.y(136.5), tail: [r.y(96), r.y(126)],
     markers: [255, 315, 367].map((px) => r.x(px)), markerY: r.y(136.5),
     grille: [r.x(45), r.y(107.5), r.x(77) - r.x(45), r.y(133.5) - r.y(107.5)], skirtH: 6,
+    doors: [{ x: r.x(493), w: r.len(33), top: r.y(118) }], mirror: { at: [r.x(520), r.y(50)], head: [r.x(544), r.y(66)], h: r.len(22) },
+    roof: [[r.x(120), 14, 1], [r.x(300), 14, 1]], clearance: [f(x0 + rearR + 2), r.x(455)], fleet: '7015', fleetAt: [x0 + 5, r.y(72)],
   };
 }
 
@@ -310,13 +345,24 @@ function archArcs(s: Silhouette, g: number[]): string {
   return `H${f(hi + w)} A${R} ${R} 0 0 0 ${hi} ${y} H${lo} A${R} ${R} 0 0 0 ${f(lo - w)} ${b}`;
 }
 
+/** Equipamentos do teto (ar-condicionado, escotilhas) como trechos do contorno, da traseira para a frente. */
+function roofPath(s: Silhouette): string {
+  return [...s.roof].sort((a, b) => a[0] - b[0]).map(([x, w, h]) => {
+    const t = f(s.top - h), e = Math.min(3, w / 4);
+    return `H${f(x)} C${f(x + e * 0.6)} ${f(s.top)} ${f(x + e * 0.4)} ${t} ${f(x + e)} ${t} H${f(x + w - e)} C${f(x + w - e * 0.4)} ${t} ${f(x + w - e * 0.6)} ${f(s.top)} ${f(x + w)} ${f(s.top)}`;
+  }).join(' ');
+}
+
 /** Contorno da carroceria com as cavas de roda recortadas. */
 function bodyPath(s: Silhouette): string {
   const { x0, top, bottom, rearR: r } = s;
   const arches = axleGroups(s).reverse().map((g) => archArcs(s, g)).join(' ');
   const rear = s.rear ?? `H${x0 + 5} Q${x0} ${bottom} ${x0} ${f(bottom - 5)} V${f(top + r)} Q${x0} ${f(top)} ${x0 + r} ${f(top)} Z`;
-  return `M${x0 + r} ${f(top)} ${s.front} ${arches} ${rear}`;
+  return `M${x0 + r} ${f(top)} ${roofPath(s)} ${s.front} ${arches} ${rear}`;
 }
+
+/** Bordas das cavas (só os arcos, sem fechar pela base). */
+const archEdges = (s: Silhouette) => axleGroups(s).map((grp) => `M${f(grp.at(-1)! + archHalf(s))} ${s.bottom} ${archArcs(s, grp).replace(/^H[^A]*/, '')}`).join(' ');
 
 let clipCounter = 0;
 
@@ -324,6 +370,12 @@ export function darken(hex: string, amount: number): string {
   const n = parseInt(hex.replace('#', ''), 16);
   const ch = (shift: number) => Math.round(((n >> shift) & 255) * (1 - amount)).toString(16).padStart(2, '0');
   return `#${ch(16)}${ch(8)}${ch(0)}`;
+}
+
+/** Cor clara? (luminância relativa aproximada) — escolhe a cor do número de frota. */
+function isLight(hex: string): boolean {
+  const n = parseInt(hex.replace('#', ''), 16);
+  return 0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255) > 150;
 }
 
 /** Faixa da pintura (cor secundária); fica dentro do grupo `paint`, recortado pela carroceria. */
@@ -359,27 +411,11 @@ function stripeShape(style: LiveryStyle, s: Silhouette, fill: string): SVGElemen
   return svg('path', { 'data-region': 'stripe', d, fill });
 }
 
+/** Zonas da pintura (só as cores da viação); recortadas pela carroceria, ficam sob detalhes, vidros e sombreado. */
 function paintZones(art: BusArt, s: Silhouette, bodyClip: string): SVGElement {
-  const len = s.x1 - s.x0;
   const g = svg('g', { 'data-region': 'paint', 'clip-path': `url(#${bodyClip})` });
   const stripe = stripeShape(art.livery, s, art.secondary);
   if (stripe) g.appendChild(stripe);
-  // brilho do teto e friso da cintura
-  g.appendChild(svg('rect', { x: s.x0, y: f(s.top), width: len, height: 3.5, fill: GLASS_SHINE, opacity: 0.16 }));
-  g.appendChild(svg('rect', { x: s.x0, y: s.belt + 1.5, width: len, height: 1.6, fill: SHADE, opacity: 0.2 }));
-  if (s.decks) g.appendChild(svg('rect', { x: s.x0, y: f(s.decks[0] + 1.5), width: len, height: 1.6, fill: SHADE, opacity: 0.2 }));
-  // vincos de portas e bagageiros
-  g.appendChild(svg('path', { d: s.seams, fill: 'none', stroke: SHADE, 'stroke-opacity': 0.28, 'stroke-width': 1 }));
-  // grade do motor (traseira): frisos verticais
-  if (s.grille) {
-    const [gx, gy, gw, gh] = s.grille;
-    const n = Math.floor(gw / 2.6);
-    const d = Array.from({ length: n }, (_, i) => `M${f(gx + 1.3 + i * 2.6)} ${f(gy)} v${f(gh)}`).join(' ');
-    g.appendChild(svg('path', { d, stroke: SHADE, 'stroke-opacity': 0.4, 'stroke-width': 1.3, 'stroke-linecap': 'round' }));
-  }
-  // borda das cavas de roda
-  const lips = axleGroups(s).map((grp) => `M${f(grp.at(-1)! + archHalf(s))} ${s.bottom} ${archArcs(s, grp).replace(/^H[^A]*/, '')}`).join(' ');
-  g.appendChild(svg('path', { d: lips, fill: 'none', stroke: darken(art.primary, 0.4), 'stroke-width': 2.5 }));
   return g;
 }
 
@@ -392,48 +428,146 @@ function skirt(art: BusArt, s: Silhouette, bodyClip: string): SVGElement {
   return g;
 }
 
-function windows(s: Silhouette, bodyClip: string, glassClip: string): SVGElement {
+/** Retrovisor: braço curvo (na cor da carroceria, escurecida) e o espelho pendurado; fora do recorte, porque passa da frente. */
+function mirror(s: Silhouette, primary: string): SVGElement {
+  const { at: [ax, ay], head: [hx, hy], h } = s.mirror;
+  const g = svg('g', { 'data-part': 'mirror' });
+  const lift = Math.max(2, Math.abs(hx - ax) * 0.25);
+  g.appendChild(svg('path', {
+    d: `M${f(ax)} ${f(ay)} C${f(ax + (hx - ax) * 0.45)} ${f(Math.min(ay, hy) - lift)} ${f(hx)} ${f(hy - lift)} ${f(hx)} ${f(hy + 0.6)}`,
+    fill: 'none', stroke: darken(primary, 0.2), 'stroke-width': 1.1, 'stroke-linecap': 'round',
+  }));
+  g.appendChild(svg('path', { d: rr(hx - 1.2, hy, 2.4, h, 1), fill: MIRROR, stroke: MIRROR_EDGE, 'stroke-width': 0.5 }));
+  g.appendChild(svg('path', { d: `M${f(hx + 0.6)} ${f(hy + 1)} v${f(h - 2)}`, stroke: GLASS_SHINE, 'stroke-opacity': 0.25, 'stroke-width': 0.5 }));
+  return g;
+}
+
+/**
+ * Detalhes da lataria sobre a pintura: frisos, vincos, grade, portinhola, degraus, bordas das cavas, base dos
+ * equipamentos do teto e número de frota (recortados pela carroceria); o retrovisor fica fora do recorte.
+ */
+function details(art: BusArt, s: Silhouette, bodyClip: string): SVGElement {
+  const len = s.x1 - s.x0;
+  const g = svg('g', { 'data-region': 'details' });
+  const c = svg('g', { 'clip-path': `url(#${bodyClip})` });
+  // brilho do teto e frisos da cintura (e entre os andares)
+  c.appendChild(svg('rect', { x: s.x0, y: f(s.top - 4), width: len, height: 7.5, fill: GLASS_SHINE, opacity: 0.16 }));
+  c.appendChild(svg('rect', { x: s.x0, y: s.belt + 1.5, width: len, height: 1.6, fill: SHADE, opacity: 0.2 }));
+  if (s.decks) c.appendChild(svg('rect', { x: s.x0, y: f(s.decks[0] + 1.5), width: len, height: 1.6, fill: SHADE, opacity: 0.2 }));
+  // base dos equipamentos do teto
+  c.appendChild(svg('path', {
+    'data-part': 'roof', d: s.roof.map(([x, w]) => `M${f(x + 1)} ${f(s.top + 0.3)} h${f(w - 2)}`).join(' '),
+    fill: 'none', stroke: SHADE, 'stroke-opacity': 0.3, 'stroke-width': 0.7,
+  }));
+  // vincos de portas e bagageiros
+  c.appendChild(svg('path', { 'data-part': 'seams', d: s.seams, fill: 'none', stroke: SHADE, 'stroke-opacity': 0.28, 'stroke-width': 1 }));
+  // grade do motor (traseira): frisos verticais
+  if (s.grille) {
+    const [gx, gy, gw, gh] = s.grille;
+    const n = Math.floor(gw / 2.6);
+    const d = Array.from({ length: n }, (_, i) => `M${f(gx + 1.3 + i * 2.6)} ${f(gy)} v${f(gh)}`).join(' ');
+    c.appendChild(svg('path', { d, stroke: SHADE, 'stroke-opacity': 0.4, 'stroke-width': 1.3, 'stroke-linecap': 'round' }));
+  }
+  // portinhola de serviço à frente da cava traseira (bocal, bateria)
+  const rearGroup = axleGroups(s)[0]!;
+  const hx = rearGroup.at(-1)! + archHalf(s) + 3, hy = s.bottom - (s.skirtH ?? 11) - 7.5;
+  c.appendChild(svg('path', { 'data-part': 'hatch', d: rr(hx, hy, 7, 5, 1.2), fill: 'none', stroke: SHADE, 'stroke-opacity': 0.32, 'stroke-width': 0.7 }));
+  // degraus das portas: vão escuro com a quina de alumínio
+  for (const door of s.doors ?? []) {
+    c.appendChild(svg('path', { 'data-part': 'step', d: rr(door.x + 1, s.bottom - 3.6, door.w - 2, 2.8, 0.6), fill: STEP }));
+    c.appendChild(svg('path', { d: `M${f(door.x + 1.6)} ${f(s.bottom - 3.6)} h${f(door.w - 3.2)}`, stroke: STEP_EDGE, 'stroke-width': 0.6 }));
+  }
+  // borda das cavas de roda
+  c.appendChild(svg('path', { d: archEdges(s), fill: 'none', stroke: darken(art.primary, 0.4), 'stroke-width': 2.5 }));
+  // número de frota fictício, pequeno (sem placa)
+  const [fx, fy] = s.fleetAt ?? [s.x0 + 5, s.belt + 8];
+  const fleet = svg('text', {
+    'data-part': 'fleet', x: f(fx), y: f(fy), fill: isLight(art.primary) ? FLEET_DARK : FLEET_LIGHT,
+    'font-family': "'Barlow Condensed', 'Arial Narrow', sans-serif", 'font-size': 4.4, 'font-weight': 700,
+  });
+  fleet.textContent = s.fleet;
+  c.appendChild(fleet);
+  g.appendChild(c);
+  g.appendChild(mirror(s, art.primary));
+  return g;
+}
+
+function windows(s: Silhouette, bodyClip: string, glassClip: string, full: boolean, glassFill: string): SVGElement {
   const g = svg('g', { 'data-region': 'windows', 'clip-path': `url(#${bodyClip})` });
   if (s.frame) g.appendChild(svg('path', { d: s.frame, fill: WINDOW_FRAME }));
-  g.appendChild(svg('path', { d: s.glass, fill: BUS_WINDOW }));
+  g.appendChild(svg('path', { d: s.glass, fill: glassFill }));
+  if (!full) return g;
+  const inGlass = svg('g', { 'clip-path': `url(#${glassClip})` });
+  // corrimãos atrás do vidro das portas
+  const rails = (s.doors ?? []).map((d) => `M${f(d.x + 2.6)} ${f(d.top + 5)} V${f(s.bottom - 7)} M${f(d.x + d.w - 2.6)} ${f(d.top + 5)} V${f(s.bottom - 7)}`).join(' ');
+  if (rails) inGlass.appendChild(svg('path', { 'data-part': 'handrail', d: rails, stroke: HANDRAIL, 'stroke-opacity': 0.75, 'stroke-width': 0.7, 'stroke-linecap': 'round' }));
   // reflexos inclinados, só sobre o vidro
   const h = s.bottom - s.top;
   const shine = Array.from({ length: Math.ceil((s.x1 - s.x0) / 46) + 1 }, (_, i) => {
     const x = s.x0 + 14 + i * 46;
     return `M${f(x)} ${f(s.top - 2)} h13 l${f(-h * 0.35)} ${f(h)} h-13 Z`;
   }).join(' ');
-  const sh = svg('g', { 'clip-path': `url(#${glassClip})` });
+  const sh = svg('g', { 'data-part': 'reflexo' });
   sh.appendChild(svg('path', { d: shine, fill: GLASS_SHINE, opacity: 0.07 }));
   sh.appendChild(svg('rect', { x: s.x0, y: f(s.winTop - 1), width: s.x1 - s.x0 + 4, height: 3, fill: GLASS_SHINE, opacity: 0.06 }));
   if (s.decks) sh.appendChild(svg('rect', { x: s.x0, y: f(s.decks[1] - 1), width: s.x1 - s.x0 + 4, height: 3, fill: GLASS_SHINE, opacity: 0.06 }));
-  g.appendChild(sh);
+  inGlass.appendChild(sh);
+  g.appendChild(inGlass);
+  // vedação de borracha em volta dos vidros
+  g.appendChild(svg('path', { 'data-part': 'seal', d: s.glass, fill: 'none', stroke: SEAL, 'stroke-width': 0.8 }));
   return g;
 }
 
-function lights(s: Silhouette): SVGElement {
+function lights(s: Silhouette, bodyClip: string, full: boolean): SVGElement {
   const { x0, x1, tail: [t0, t1] } = s;
   const g = svg('g', { 'data-region': 'lights' });
   g.appendChild(svg('path', { d: rr(x1 - 7.5, s.headY, 8.5, 5, 1.8), fill: HEADLIGHT }));
-  g.appendChild(svg('path', { d: rr(x1 - 11, s.headY + 0.5, 3, 4, 1), fill: SIGNAL }));
   g.appendChild(svg('path', { d: rr(x0 - 1, t0, 4, t1 - t0, 1.6), fill: TAILLIGHT }));
+  if (!full) return g;
+  g.appendChild(svg('path', { d: rr(x1 - 11, s.headY + 0.5, 3, 4, 1), fill: SIGNAL }));
   g.appendChild(svg('path', { d: rr(x0 - 1, t1 + 1.5, 4, 3.5, 1), fill: SIGNAL }));
   for (const x of s.markers ?? []) g.appendChild(svg('circle', { cx: x, cy: f(s.markerY ?? s.bottom - 5.5), r: 1.4, fill: SIGNAL }));
+  // luzes de posição nos cantos do teto (vermelha atrás, âmbar na frente), dentro da carroceria
+  const [cr, cf] = s.clearance;
+  const pos = svg('g', { 'data-part': 'clearance', 'clip-path': `url(#${bodyClip})` });
+  pos.appendChild(svg('path', { d: rr(cr - 1.6, s.top + 0.9, 3.2, 1.5, 0.6), fill: TAILLIGHT }));
+  pos.appendChild(svg('path', { d: rr(cf - 1.6, s.top + 0.9, 3.2, 1.5, 0.6), fill: SIGNAL }));
+  g.appendChild(pos);
   return g;
 }
 
-function wheels(s: Silhouette): SVGElement {
+/** Sombreado de volume: escurece a quina do teto, a base e as pontas, multiplicando sobre tudo que está embaixo. */
+function shade(s: Silhouette, bodyClip: string, vId: string, hId: string): SVGElement {
+  const g = svg('g', { 'data-region': 'shade', 'clip-path': `url(#${bodyClip})`, style: 'mix-blend-mode: multiply', 'pointer-events': 'none' });
+  const top = s.top - 4;
+  for (const id of [vId, hId]) g.appendChild(svg('rect', { x: s.x0 - 2, y: f(top), width: s.x1 - s.x0 + 4, height: f(s.bottom - top + 1), fill: `url(#${id})` }));
+  return g;
+}
+
+function wheels(s: Silhouette, full: boolean): SVGElement {
   const R = s.wheelR, cy = wheelY(s);
   const g = svg('g', { 'data-region': 'wheels' });
   for (const cx of s.axles) {
     g.appendChild(svg('circle', { class: 'tire', cx, cy, r: R, fill: BUS_TIRE }));
-    g.appendChild(svg('circle', { cx, cy, r: f(R - 2.4), fill: 'none', stroke: SIDEWALL, 'stroke-width': 1.2 }));
-    g.appendChild(svg('circle', { cx, cy, r: f(R * 0.6), fill: BUS_RIM }));
-    g.appendChild(svg('circle', { cx, cy, r: f(R * 0.46), fill: RIM_DARK }));
+    if (!full) {
+      g.appendChild(svg('circle', { cx, cy, r: f(R * 0.6), fill: BUS_RIM }));
+      continue;
+    }
+    // banda de rodagem e flanco
+    g.appendChild(svg('circle', { cx, cy, r: f(R - 0.9), fill: 'none', stroke: TREAD, 'stroke-width': 0.7 }));
+    g.appendChild(svg('circle', { cx, cy, r: f(R * 0.78), fill: 'none', stroke: SIDEWALL, 'stroke-width': 1.2 }));
+    // aro com borda clara, prato com furos de ventilação, cubo e porcas
+    g.appendChild(svg('circle', { cx, cy, r: f(R * 0.62), fill: BUS_RIM, stroke: RIM_LIGHT, 'stroke-width': 0.6 }));
+    g.appendChild(svg('circle', { cx, cy, r: f(R * 0.5), fill: RIM_DARK }));
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2 + Math.PI / 8;
+      g.appendChild(svg('circle', { 'data-part': 'rim-hole', cx: f(cx + Math.cos(a) * R * 0.37), cy: f(cy + Math.sin(a) * R * 0.37), r: f(R * 0.075), fill: BUS_TIRE }));
+    }
+    g.appendChild(svg('circle', { cx, cy, r: f(R * 0.22), fill: RIM_LIGHT }));
     for (let i = 0; i < 6; i++) {
       const a = (i / 6) * Math.PI * 2;
-      g.appendChild(svg('circle', { cx: f(cx + Math.cos(a) * R * 0.32), cy: f(cy + Math.sin(a) * R * 0.32), r: 0.9, fill: RIM_LIGHT }));
+      g.appendChild(svg('circle', { cx: f(cx + Math.cos(a) * R * 0.14), cy: f(cy + Math.sin(a) * R * 0.14), r: f(R * 0.035), fill: RIM_DARK }));
     }
-    g.appendChild(svg('circle', { cx, cy, r: f(R * 0.17), fill: RIM_LIGHT }));
   }
   return g;
 }
@@ -461,30 +595,76 @@ function logoBadge(logo: LogoRef, s: Silhouette, primary: string, secondary: str
   return g;
 }
 
+function gradient(tag: 'linearGradient' | 'radialGradient', id: string, attrs: Record<string, string | number>, stops: [number, string, number][]): SVGElement {
+  return svg(tag, { id, ...attrs }, ...stops.map(([offset, color, opacity]) => svg('stop', { offset, 'stop-color': color, 'stop-opacity': opacity })));
+}
+
+export interface BusSvgOptions {
+  /** 'full' (padrão): galeria, garagem, loja, criação; 'simple': marcador do mapa (sem sombreado, reflexos e detalhes finos). */
+  detail?: 'full' | 'simple';
+}
+
 /**
  * Ônibus de lado, com a pintura da empresa. viewBox 320×120; o tamanho vem do CSS.
- * Camadas (data-region): body, paint (com stripe), skirt, windows, lights, logo, wheels.
+ * Camadas (de baixo para cima): sombra no chão e cavas → body → paint (com stripe) → skirt → details → windows → lights
+ * → shade (multiply) → logo → wheels. No nível 'simple' não há details nem shade, e vidros, luzes e rodas são lisos.
  */
-export function busSvg(art: BusArt): SVGSVGElement {
+export function busSvg(art: BusArt, opts: BusSvgOptions = {}): SVGSVGElement {
   const s = BUS_SILHOUETTES[art.shape];
   if (!s) throw new Error(`modelo de ônibus desconhecido: ${String(art.shape)}`);
+  const full = (opts.detail ?? 'full') === 'full';
   const id = `bus-${++clipCounter}`;
   const bodyClip = `${id}-body`, glassClip = `${id}-glass`;
   const d = bodyPath(s);
   const root = svg('svg', { viewBox: '0 0 320 120', class: 'bus-svg', role: 'img', 'aria-hidden': 'true' });
-
   root.appendChild(svg('clipPath', { id: bodyClip }, svg('path', { d })));
-  root.appendChild(svg('clipPath', { id: glassClip }, svg('path', { d: s.glass })));
-  root.appendChild(svg('ellipse', { cx: (s.x0 + s.x1) / 2, cy: s.ground + 1, rx: (s.x1 - s.x0) / 2 + 4, ry: 4, fill: SHADE, opacity: 0.4 }));
+  const mid = (s.x0 + s.x1) / 2, half = (s.x1 - s.x0) / 2;
   const wells = axleGroups(s).map((g) => `M${f(g.at(-1)! + archHalf(s))} ${s.bottom} ${archArcs(s, g).replace(/^H[^A]*/, '')} Z`).join(' ');
-  root.appendChild(svg('path', { d: wells, fill: WHEEL_WELL }));
+
+  if (!full) {
+    root.appendChild(svg('ellipse', { cx: mid, cy: s.ground + 1, rx: half + 4, ry: 4, fill: SHADE, opacity: 0.4 }));
+    root.appendChild(svg('path', { d: wells, fill: WHEEL_WELL }));
+    root.appendChild(svg('path', { 'data-region': 'body', d, fill: art.primary }));
+    root.appendChild(paintZones(art, s, bodyClip));
+    root.appendChild(skirt(art, s, bodyClip));
+    root.appendChild(windows(s, bodyClip, glassClip, false, BUS_WINDOW));
+    root.appendChild(lights(s, bodyClip, false));
+    if (art.logo) root.appendChild(logoBadge(art.logo, s, art.primary, art.secondary, `${id}-logo`));
+    root.appendChild(wheels(s, false));
+    return root;
+  }
+
+  const ids = { glass: `${id}-glassfill`, shadeV: `${id}-shade-v`, shadeH: `${id}-shade-h`, ground: `${id}-ground` };
+  const user = { gradientUnits: 'userSpaceOnUse' };
+  root.appendChild(svg('defs', {},
+    svg('clipPath', { id: glassClip }, svg('path', { d: s.glass })),
+    gradient('linearGradient', ids.glass, { ...user, x1: 0, y1: f(s.winTop), x2: 0, y2: f(s.belt) }, [[0, GLASS_TOP, 1], [0.55, BUS_WINDOW, 1], [1, GLASS_BOTTOM, 1]]),
+    gradient('linearGradient', ids.shadeV, { ...user, x1: 0, y1: f(s.top - 4), x2: 0, y2: f(s.bottom) },
+      [[0, SHADE, 0.2], [0.08, SHADE, 0], [0.55, SHADE, 0], [0.82, SHADE, 0.07], [1, SHADE, 0.26]]),
+    gradient('linearGradient', ids.shadeH, { ...user, x1: s.x0, y1: 0, x2: s.x1, y2: 0 },
+      [[0, SHADE, 0.16], [0.035, SHADE, 0], [0.965, SHADE, 0], [1, SHADE, 0.14]]),
+    gradient('radialGradient', ids.ground, {}, [[0, SHADE, 0.5], [0.7, SHADE, 0.3], [1, SHADE, 0]]),
+  ));
+  // sombra no chão: mancha suave sob o ônibus e sombra de contato sob cada cava
+  const shadow = svg('g', { 'data-part': 'ground-shadow' });
+  shadow.appendChild(svg('ellipse', { cx: mid, cy: s.ground + 0.5, rx: half + 9, ry: 5, fill: `url(#${ids.ground})` }));
+  for (const grp of axleGroups(s)) {
+    const cx = (grp[0]! + grp.at(-1)!) / 2, rx = (grp.at(-1)! - grp[0]!) / 2 + s.wheelR * 1.1;
+    shadow.appendChild(svg('ellipse', { cx: f(cx), cy: s.ground + 0.3, rx: f(rx), ry: 1.6, fill: SHADE, opacity: 0.55 }));
+  }
+  root.appendChild(shadow);
+  // cavas com profundidade: forro escuro e anel mais escuro junto à borda (a metade de fora fica sob a carroceria)
+  root.appendChild(svg('path', { d: wells, fill: WELL_LINER }));
+  root.appendChild(svg('path', { 'data-part': 'well-ring', d: archEdges(s), fill: 'none', stroke: WHEEL_WELL, 'stroke-width': 4.5 }));
   root.appendChild(svg('path', { 'data-region': 'body', d, fill: art.primary }));
   root.appendChild(paintZones(art, s, bodyClip));
   root.appendChild(skirt(art, s, bodyClip));
-  root.appendChild(windows(s, bodyClip, glassClip));
-  root.appendChild(lights(s));
+  root.appendChild(details(art, s, bodyClip));
+  root.appendChild(windows(s, bodyClip, glassClip, true, `url(#${ids.glass})`));
+  root.appendChild(lights(s, bodyClip, true));
+  root.appendChild(shade(s, bodyClip, ids.shadeV, ids.shadeH));
   if (art.logo) root.appendChild(logoBadge(art.logo, s, art.primary, art.secondary, `${id}-logo`));
-  root.appendChild(wheels(s));
+  root.appendChild(wheels(s, true));
   return root;
 }
 

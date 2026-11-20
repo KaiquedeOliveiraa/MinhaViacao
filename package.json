@@ -11,6 +11,7 @@
     "map": "tsx scripts/generate-map.ts",
     "calibrate": "tsx scripts/calibrate.ts",
     "measure:map": "tsx scripts/measure-map.ts",
+    "compare:bus": "tsx scripts/compare-bus.ts",
     "e2e": "playwright test"
   },
   "dependencies": {

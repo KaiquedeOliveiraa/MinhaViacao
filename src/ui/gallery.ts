@@ -20,12 +20,30 @@ function iconFor(scheme: number, shape: number, livery: number): LogoIconId {
   return ICONS[(scheme * perScheme + shape * LIVERY_STYLES.length + livery) % ICONS.length]!;
 }
 
+/** Cores neutras da comparação com as referências (npm run compare:bus): só a forma e os detalhes contam. */
+const NEUTRAL = { primary: '#d4d6da', secondary: '#8d929a' };
+
+/** /?galeria&comparar: cada forma em pintura lisa, cores neutras e sem logo, para a ferramenta de comparação. */
+function compareSection(): HTMLElement {
+  return h('section', { class: 'gallery-section', dataset: { compare: '' } },
+    h('p', { class: 'eyebrow' }, 'Comparação: pintura lisa, cores neutras, sem logo'),
+    h('div', { class: 'card-grid' },
+      ...BUS_SHAPES.map((shape) => h('figure', { class: 'card gallery-item', dataset: { shape } },
+        busSvg({ shape, livery: 'plain', ...NEUTRAL }),
+        h('figcaption', { class: 'muted' }, SHAPE_NAMES[shape]),
+      )),
+    ),
+  );
+}
+
 /** Galeria de conferência dos desenhos (/?galeria): todas as formas, pinturas e logos. */
 export function renderGallery(): HTMLElement {
+  const compare = new URLSearchParams(window.location.search).has('comparar');
   return h('div', { class: 'start-page' },
     renderSiteHeader(),
     h('main', { class: 'gallery' },
       h('h1', { class: 'title' }, 'Galeria de conferência'),
+      compare ? compareSection() : null,
       ...SCHEMES.map((scheme, s) => h('section', { class: 'gallery-section' },
         h('p', { class: 'eyebrow' }, scheme.name),
         h('div', { class: 'card-grid' },

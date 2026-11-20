@@ -118,3 +118,80 @@ test('miniatura da pintura', () => {
   expect(liveryThumb('plain', '#ff7a00', '#ffffff').querySelector('[data-part="stripe"]')).toBeNull();
   expect(thumb.querySelector('[data-part="stripe"]')).not.toBeNull();
 });
+
+/** Camadas de baixo para cima (só as que têm data-region direto no desenho). */
+const LAYERS = ['body', 'paint', 'skirt', 'details', 'windows', 'lights', 'shade', 'logo', 'wheels'];
+const logoArt = (over: Partial<BusArt> = {}) => art({ logo: { kind: 'icon', iconId: 'pine' }, ...over });
+const before = (a: Element, b: Element) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+const clipOf = (el: Element) => /^url\(#(.+)\)$/.exec(el.getAttribute('clip-path') ?? '')?.[1];
+
+test('camadas de realismo: details e shade em cada forma × pintura, na ordem de baixo para cima', () => {
+  for (const shape of BUS_SHAPES) for (const livery of LIVERIES) {
+    const where = `${shape}/${livery}`;
+    const svg = busSvg(logoArt({ shape, livery }));
+    const layers = LAYERS.map((name) => {
+      const el = region(svg, name);
+      expect(el, `${where} ${name}`).not.toBeNull();
+      expect(el!.parentNode, `${where} ${name} fica na raiz`).toBe(svg);
+      return el!;
+    });
+    for (let i = 1; i < layers.length; i++) expect(before(layers[i - 1]!, layers[i]!), `${where} ${LAYERS[i - 1]} antes de ${LAYERS[i]}`).toBe(true);
+    // sombreado de volume: multiplica sobre pintura, vidros e faróis, recortado pela carroceria
+    const shade = region(svg, 'shade')!;
+    expect(shade.getAttribute('style') ?? '', where).toMatch(/mix-blend-mode:\s*multiply/);
+    expect(clipOf(shade), where).toBe(clipOf(region(svg, 'paint')!));
+    // a pintura só tem as zonas da pintura: vincos, frisos e grade ficam em details
+    expect(region(svg, 'paint')!.querySelector('[data-part="seams"]'), where).toBeNull();
+    expect(region(svg, 'details')!.querySelector('[data-part="seams"]'), where).not.toBeNull();
+  }
+});
+
+test('detalhes genéricos do desenho completo: retrovisor fora do recorte, frota fictícia, sem placa', () => {
+  for (const shape of BUS_SHAPES) {
+    const svg = busSvg(art({ shape }));
+    const mirror = svg.querySelector('[data-part="mirror"]');
+    expect(mirror, shape).not.toBeNull();
+    // o retrovisor passa da frente: nenhum ancestral pode recortá-lo
+    for (let el = mirror!.parentElement; el && el !== (svg as Element); el = el.parentElement) expect(el.hasAttribute('clip-path'), `${shape} retrovisor recortado`).toBe(false);
+    const fleet = svg.querySelector('[data-part="fleet"]');
+    expect(fleet?.textContent, shape).toMatch(/^\d{4}$/);
+    expect(svg.querySelector('[data-part="plate"]'), shape).toBeNull();
+    for (const part of ['step', 'handrail', 'hatch', 'roof', 'clearance', 'reflexo', 'seal', 'ground-shadow']) {
+      if ((part === 'step' || part === 'handrail') && shape === 'van') continue; // a van não tem porta de ônibus
+      expect(svg.querySelector(`[data-part="${part}"]`), `${shape} ${part}`).not.toBeNull();
+    }
+    // cavas com profundidade: anel escuro interno; rodas com aro furado
+    expect(svg.querySelector('[data-part="well-ring"]'), shape).not.toBeNull();
+    expect(svg.querySelectorAll('[data-region="wheels"] [data-part="rim-hole"]').length, shape).toBeGreaterThan(0);
+  }
+});
+
+test("detail: 'simple' tem a mesma silhueta e pintura, sem sombreado, reflexo e detalhes finos", () => {
+  for (const shape of BUS_SHAPES) for (const livery of LIVERIES) {
+    const where = `${shape}/${livery}`;
+    const full = busSvg(logoArt({ shape, livery }));
+    const simple = busSvg(logoArt({ shape, livery }), { detail: 'simple' });
+    expect(busSvg(logoArt({ shape, livery }), { detail: 'full' }).querySelectorAll('*').length, where).toBe(full.querySelectorAll('*').length);
+    expect(region(simple, 'shade'), where).toBeNull();
+    expect(simple.querySelector('[data-part="reflexo"]'), where).toBeNull();
+    expect(simple.querySelector('[data-part="mirror"]'), where).toBeNull();
+    expect(simple.querySelector('[data-part="fleet"]'), where).toBeNull();
+    expect(simple.querySelectorAll('*').length, where).toBeLessThan(full.querySelectorAll('*').length / 2);
+    expect(region(simple, 'body')!.getAttribute('d'), where).toBe(region(full, 'body')!.getAttribute('d'));
+    expect(region(simple, 'stripe')?.getAttribute('d') ?? null, where).toBe(region(full, 'stripe')?.getAttribute('d') ?? null);
+    for (const name of ['body', 'paint', 'skirt', 'windows', 'lights', 'logo', 'wheels']) expect(region(simple, name), `${where} ${name}`).not.toBeNull();
+  }
+});
+
+test('gradientes e recortes: ids únicos entre dois desenhos e toda referência url(#…) existe no próprio desenho', () => {
+  const a = busSvg(art({ shape: 'rodo' }));
+  const b = busSvg(art({ shape: 'rodo' }));
+  const ids = (s: SVGSVGElement) => [...s.querySelectorAll('[id]')].map((e) => e.id);
+  expect(a.querySelectorAll('linearGradient, radialGradient').length).toBeGreaterThan(0);
+  expect(new Set([...ids(a), ...ids(b)]).size).toBe(ids(a).length + ids(b).length);
+  for (const s of [a, busSvg(art({ shape: 'dd' }), { detail: 'simple' })]) {
+    const refs = [...s.querySelectorAll('*')].flatMap((e) => ['fill', 'clip-path', 'stroke'].map((k) => /^url\(#(.+)\)$/.exec(e.getAttribute(k) ?? '')?.[1]).filter(Boolean));
+    expect(refs.length).toBeGreaterThan(0);
+    for (const id of refs) expect(s.querySelector(`[id="${id}"]`), id).not.toBeNull();
+  }
+});
