@@ -31,6 +31,7 @@ const STEP = '#1b1a20';
 const STEP_EDGE = '#a3a6ae';
 const FLEET_DARK = '#16151b';
 const FLEET_LIGHT = '#ffffff';
+const RUB_RAIL = '#e4e6ea';
 
 const GROUND = 110;
 
@@ -85,6 +86,12 @@ interface Silhouette {
   /** número de frota fictício e onde fica (padrão: canto traseiro, logo abaixo da cintura) */
   fleet: string;
   fleetAt?: Pt;
+  /** perfis escuros sobre os vidros (encontro das folhas de correr das janelas); só no completo */
+  mullions?: string;
+  /** altura do friso de alumínio (para-choque lateral) que corre por toda a lateral */
+  rubRail?: number;
+  /** canto de cima da portinhola de serviço (padrão: à frente da cava traseira, acima da saia) */
+  hatch?: Pt;
 }
 
 interface Door { x: number; w: number; top: number }
@@ -184,7 +191,9 @@ function refScale(ref: { front: number; rear: number; ground: number }, x0: numb
 /**
  * Convencional urbano de motor dianteiro. Proporções da referência "Convencional urbano", vista do lado das portas
  * (218 px de comprimento, traseira em x 15, dianteira em x 233, teto y 12, base y 70, chão y 78): balanço dianteiro
- * curto com a porta dianteira à frente do eixo, porta traseira atrás do eixo traseiro, canto de baixo da traseira chanfrado.
+ * curto com a porta dianteira à frente do eixo, porta traseira atrás do eixo traseiro, canto de baixo da traseira em rampa,
+ * frente inclinada (para-brisa), janelas com vidro de correr em cima, portas de moldura escura com travessa,
+ * friso de alumínio e lanternas laterais ao longo da lateral.
  */
 function conv(): Silhouette {
   const x0 = 26, x1 = 294;
@@ -193,33 +202,56 @@ function conv(): Silhouette {
   const winTop = r.y(18), belt = r.y(39);
   const doorTop = r.y(24);
   const paneH = belt - 1.5 - winTop;
-  // janelas urbanas: vidro de cima e de baixo separados por um trilho escuro (a moldura aparece entre eles)
+  // janelas urbanas: vidro de cima (de correr) e de baixo separados por um trilho escuro (a moldura aparece entre eles)
   const rail = r.y(28.5);
   const sash = (from: number, to: number, n: number, gap = 5) => `${paneRow(from, to, n, winTop, rail - 0.7 - winTop, gap)} ${paneRow(from, to, n, rail + 0.7, belt - 1.5 - rail - 0.7, gap)}`;
-  const frontDoor = busDoor(r.x(204), r.len(20), doorTop, bottom, bottom - 9);
-  const rearDoor = busDoor(r.x(48), r.len(24), doorTop, bottom, bottom - 9);
+  /** centro de cada janela de uma fileira (onde as duas folhas de correr se encontram) */
+  const mids = (from: number, to: number, n: number, gap = 5) => {
+    const w = (to - from - gap * (n - 1)) / n;
+    return Array.from({ length: n }, (_, i) => f(from + i * (w + gap) + w / 2));
+  };
+  // portas urbanas: moldura escura cheia, coluna central, cada folha com vidro de cima e de baixo (travessa na cintura)
+  const doorRail = r.y(41), doorGlassBottom = r.y(65);
+  const door = (px: number, pw: number) => {
+    const x = r.x(px), w = r.len(pw), b = 1.2, post = 0.8, leaf = w / 2 - b - post;
+    const pane = (lx: number) => `${rr(lx, doorTop + b, leaf, doorRail - 0.7 - doorTop - b, 1.5)} ${rr(lx, doorRail + 0.7, leaf, doorGlassBottom - doorRail - 0.7, 1.5)}`;
+    return {
+      frame: rr(x, doorTop, w, bottom - 3.6 - doorTop, 2),
+      glass: `${pane(x + b)} ${pane(x + w / 2 + post)}`,
+      door: { x, w, top: doorTop },
+    };
+  };
+  const frontDoor = door(204, 20), rearDoor = door(50.5, 19.5);
+  const mid4 = mids(r.x(72) + 2, r.x(193), 4, r.len(3)), mid1 = mids(r.x(21), r.x(47.5), 1);
   return {
     x0, x1, top, bottom, ground: GROUND, wheelR: r.len(11), archGap: r.len(1), axles: [r.x(87), r.x(189)], rearR: 3,
-    front: `H${x1 - 6} Q${x1} ${top} ${x1} ${f(top + 6)} V${f(bottom - 3)} Q${x1} ${bottom} ${x1 - 3} ${bottom}`,
-    rear: `H${r.x(42)} C${r.x(30)} ${bottom} ${x0} ${r.y(67)} ${x0} ${r.y(64)} V${f(top + 3)} Q${x0} ${top} ${x0 + 3} ${top} Z`,
+    // frente inclinada: o teto arredonda na quina e o para-brisa desce para a frente até a altura do para-choque
+    front: `H${r.x(223)} Q${r.x(228.5)} ${top} ${r.x(229.6)} ${r.y(19.5)} L${x1} ${r.y(48)} V${f(bottom - 3)} Q${x1} ${bottom} ${x1 - 3} ${bottom}`,
+    // canto de baixo da traseira: rampa reta (ângulo de saída) da traseira até a porta traseira
+    rear: `H${r.x(50)} L${f(x0 + 2)} ${r.y(65.2)} Q${x0} ${r.y(65)} ${x0} ${r.y(63.8)} V${f(top + 3)} Q${x0} ${top} ${x0 + 3} ${top} Z`,
     winTop, belt,
-    frame: `${paneRow(r.x(21), r.x(47.5), 1, winTop, paneH)} ${paneRow(r.x(72) + 2, r.x(193), 4, winTop, paneH, r.len(3))}`,
+    frame: [
+      paneRow(r.x(21), r.x(47.5), 1, winTop, paneH), paneRow(r.x(72) + 2, r.x(193), 4, winTop, paneH, r.len(3)),
+      frontDoor.frame, rearDoor.frame,
+    ].join(' '),
     glass: [
-      rr(r.x(225.7), r.y(23.5), r.x(233) - r.x(225.7) + 3, r.y(45.5) - r.y(23.5), 1.5), // para-brisa visto de lado (passa da frente; o recorte da carroceria corta)
+      roundedPoly([[r.x(225.3), r.y(21.5)], [r.x(228.8), r.y(21.5)], [r.x(232.2), r.y(48.3)], [r.x(225.3), r.y(48.3)]], 1.5), // para-brisa visto de lado, acompanhando a frente inclinada
       rr(r.x(196.5), r.y(24.5), r.len(7), r.y(43) - r.y(24.5), 2), // janela estreita junto à porta dianteira
       frontDoor.glass, rearDoor.glass,
       sash(r.x(72) + 2, r.x(193), 4, r.len(3)),
       sash(r.x(21), r.x(47.5), 1), // última janela, atrás da porta traseira
     ].join(' '),
+    mullions: [...mid4, ...mid1].map((x) => `M${x} ${f(winTop)} V${f(rail)}`).join(' '),
+    rubRail: r.y(52.5),
+    markers: [22, 104, 124, 150, 169].map((px) => r.x(px)), markerY: r.y(61),
     seams: [
-      frontDoor.seam, rearDoor.seam,
-      `M${x0 + 2} ${r.y(16)} H${x1 - 4}`, // calha do teto
-      `M${x0} ${r.y(52)} H${x1}`, // friso baixo
+      `M${x0 + 2} ${r.y(16)} H${r.x(228)}`, // calha do teto
+      `M${r.x(16.8)} ${r.y(15)} V${r.y(64.5)}`, // junta do painel do canto traseiro
     ].join(' '),
     // logo no meio do entre-eixos; farol na altura dos faróis da vista frontal; lanterna vermelha sobre branca na traseira
     logoX: r.x((87 + 189) / 2), headY: r.y(55), tail: [r.y(52.5), r.y(60)], skirtH: 7,
-    doors: [frontDoor.door, rearDoor.door], mirror: { at: [x1 - 1, f(top + 4)], head: [x1 + 5, f(top + 9)], h: 8 },
-    roof: [[r.x(70), 14, 1.3], [r.x(150), 14, 1.3]], clearance: [x0 + 4, x1 - 8], fleet: '1024',
+    doors: [frontDoor.door, rearDoor.door], mirror: { at: [r.x(228.5), r.y(15)], head: [x1 + 3, r.y(21)], h: r.len(10) }, hatch: [r.x(137), r.y(55.5)],
+    roof: [[r.x(50), 7, 1.1], [r.x(86), 7, 1.1], [r.x(129), 7, 1.1], [r.x(172), 16, 1.4]], clearance: [x0 + 4, r.x(221)], fleet: '1024',
   };
 }
 
@@ -461,6 +493,11 @@ function details(art: BusArt, s: Silhouette, bodyClip: string): SVGElement {
   }));
   // vincos de portas e bagageiros
   c.appendChild(svg('path', { 'data-part': 'seams', d: s.seams, fill: 'none', stroke: SHADE, 'stroke-opacity': 0.28, 'stroke-width': 1 }));
+  // friso de alumínio ao longo da lateral: filete claro com a sombra logo abaixo
+  if (s.rubRail !== undefined) {
+    c.appendChild(svg('rect', { 'data-part': 'rub-rail', x: s.x0 - 2, y: f(s.rubRail - 0.7), width: len + 4, height: 1.4, fill: RUB_RAIL, opacity: 0.6 }));
+    c.appendChild(svg('rect', { x: s.x0 - 2, y: f(s.rubRail + 0.7), width: len + 4, height: 0.6, fill: SHADE, opacity: 0.25 }));
+  }
   // grade do motor (traseira): frisos verticais
   if (s.grille) {
     const [gx, gy, gw, gh] = s.grille;
@@ -468,9 +505,8 @@ function details(art: BusArt, s: Silhouette, bodyClip: string): SVGElement {
     const d = Array.from({ length: n }, (_, i) => `M${f(gx + 1.3 + i * 2.6)} ${f(gy)} v${f(gh)}`).join(' ');
     c.appendChild(svg('path', { d, stroke: SHADE, 'stroke-opacity': 0.4, 'stroke-width': 1.3, 'stroke-linecap': 'round' }));
   }
-  // portinhola de serviço à frente da cava traseira (bocal, bateria)
-  const rearGroup = axleGroups(s)[0]!;
-  const hx = rearGroup.at(-1)! + archHalf(s) + 3, hy = s.bottom - (s.skirtH ?? 11) - 7.5;
+  // portinhola de serviço (bocal, bateria): por padrão à frente da cava traseira
+  const [hx, hy] = s.hatch ?? [axleGroups(s)[0]!.at(-1)! + archHalf(s) + 3, s.bottom - (s.skirtH ?? 11) - 7.5];
   c.appendChild(svg('path', { 'data-part': 'hatch', d: rr(hx, hy, 7, 5, 1.2), fill: 'none', stroke: SHADE, 'stroke-opacity': 0.32, 'stroke-width': 0.7 }));
   // degraus das portas: vão escuro com a quina de alumínio
   for (const door of s.doors ?? []) {
@@ -513,6 +549,8 @@ function windows(s: Silhouette, bodyClip: string, glassClip: string, full: boole
   if (s.decks) sh.appendChild(svg('rect', { x: s.x0, y: f(s.decks[1] - 1), width: s.x1 - s.x0 + 4, height: 3, fill: GLASS_SHINE, opacity: 0.06 }));
   inGlass.appendChild(sh);
   g.appendChild(inGlass);
+  // encontro das folhas de correr: perfis escuros sobre o vidro
+  if (s.mullions) g.appendChild(svg('path', { 'data-part': 'mullions', d: s.mullions, stroke: WINDOW_FRAME, 'stroke-width': 1.1 }));
   // vedação de borracha em volta dos vidros
   g.appendChild(svg('path', { 'data-part': 'seal', d: s.glass, fill: 'none', stroke: SEAL, 'stroke-width': 0.8 }));
   return g;

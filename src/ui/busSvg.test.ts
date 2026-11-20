@@ -195,3 +195,21 @@ test('gradientes e recortes: ids únicos entre dois desenhos e toda referência 
     for (const id of refs) expect(s.querySelector(`[id="${id}"]`), id).not.toBeNull();
   }
 });
+
+test('convencional urbano: portas e janelas de correr como na referência, friso de alumínio e lanternas laterais', () => {
+  const s = BUS_SILHOUETTES.conv, len = s.x1 - s.x0;
+  // portas medidas na referência (218 px, traseira em x 15): traseira de x 50,5 com 19,5 px; dianteira de x 204 com 20 px
+  const doors = [...(s.doors ?? [])].sort((a, b) => a.x - b.x);
+  [[50.5, 19.5], [204, 20]].forEach(([px, pw], i) => {
+    near((doors[i]!.x - s.x0) / len, (px! - 15) / 218, 0.005, `porta ${i + 1}: início`);
+    near(doors[i]!.w / len, pw! / 218, 0.005, `porta ${i + 1}: largura`);
+  });
+  const full = busSvg(art({ shape: 'conv' }));
+  // uma divisão de folha de correr em cada uma das 5 janelas
+  expect(full.querySelector('[data-part="mullions"]')!.getAttribute('d')!.match(/M/g)).toHaveLength(5);
+  expect(full.querySelector('[data-region="details"] [data-part="rub-rail"]')).not.toBeNull();
+  expect(region(full, 'lights')!.querySelectorAll('circle').length).toBeGreaterThanOrEqual(4);
+  // no simples (mapa) não há divisões nem friso
+  const simple = busSvg(art({ shape: 'conv' }), { detail: 'simple' });
+  for (const part of ['mullions', 'rub-rail']) expect(simple.querySelector(`[data-part="${part}"]`), part).toBeNull();
+});
