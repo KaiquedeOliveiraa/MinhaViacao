@@ -213,3 +213,18 @@ test('convencional urbano: portas e janelas de correr como na referência, friso
   const simple = busSvg(art({ shape: 'conv' }), { detail: 'simple' });
   for (const part of ['mullions', 'rub-rail']) expect(simple.querySelector(`[data-part="${part}"]`), part).toBeNull();
 });
+
+test('rodoviário: portinholas com puxadores, para-lamas escuros, catadióptricos e frente envidraçada', () => {
+  const full = busSvg(art({ shape: 'rodo' }));
+  // um puxador por portinhola (7 bagageiros e o elevador) e o da porta: 8 retângulos
+  expect(full.querySelector('[data-region="details"] [data-part="handles"]')!.getAttribute('d')!.match(/M/g)).toHaveLength(8);
+  expect(full.querySelector('[data-region="details"] [data-part="arch-trim"]')).not.toBeNull();
+  expect(full.querySelector('[data-region="details"] [data-part="trim"]')).not.toBeNull();
+  expect(full.querySelectorAll('[data-region="lights"] [data-part="reflectors"] path')).toHaveLength(2);
+  expect(full.querySelector('[data-region="lights"] [data-part="markers"]')).not.toBeNull();
+  // as janelinhas basculantes ficam sobre os vidros
+  expect(full.querySelector('[data-region="windows"] [data-part="mullions"]')).not.toBeNull();
+  // o simples (mapa) não leva esses detalhes
+  const simple = busSvg(art({ shape: 'rodo' }), { detail: 'simple' });
+  for (const part of ['handles', 'arch-trim', 'trim', 'reflectors', 'markers', 'mullions']) expect(simple.querySelector(`[data-part="${part}"]`), part).toBeNull();
+});
