@@ -141,18 +141,6 @@ function paneRow(from: number, to: number, n: number, y: number, h: number, gap 
   return Array.from({ length: n }, (_, i) => rr(from + i * (w + gap), y, w, h, 3)).join(' ');
 }
 
-/** Porta de ônibus: duas folhas de vidro e o vinco em volta. */
-function busDoor(x: number, w: number, winTop: number, bottom: number, glassBottom = bottom - 16): { glass: string; seam: string; door: Door } {
-  const leaf = w / 2 - 2;
-  const y = winTop + 1;
-  const h = glassBottom - y;
-  return {
-    glass: `${rr(x + 1.5, y, leaf, h, 2)} ${rr(x + w / 2 + 0.5, y, leaf, h, 2)}`,
-    seam: rr(x, winTop - 2, w, bottom - 4 - (winTop - 2), 2.5),
-    door: { x, w, top: winTop - 2 },
-  };
-}
-
 function van(): Silhouette {
   const x0 = 68, x1 = 258, top = GROUND - (x1 - x0) / 2.4, bottom = 99;
   const winTop = 38.5, belt = 60;
@@ -172,23 +160,53 @@ function van(): Silhouette {
   };
 }
 
+/**
+ * Micro-ônibus de motor dianteiro. Proporções da referência "micro 048" (foto de lado, frente à direita; 468,5 px de
+ * comprimento, traseira em x 21,5, dianteira em x 490, teto y 135, base y 272, chão y 286,5), conferidas com a "micro
+ * Volare" (foto levemente oblíqua: eixos na mesma fração do comprimento). Balanço dianteiro curto com a porta logo atrás
+ * do eixo dianteiro, para-brisa inclinado que desce do teto e se junta ao vidro grande do motorista, faixa de janelas
+ * escura de vidro colado (o vidro traseiro sobe na quina), traseira com o canto de baixo recolhido, ar-condicionado no teto.
+ */
 function micro(): Silhouette {
-  const x0 = 46, x1 = 276, top = GROUND - (x1 - x0) / 3.0, bottom = 100;
-  const winTop = top + 8, belt = 65;
-  const door = busDoor(245, 19, winTop, bottom);
+  const x0 = 46, x1 = 276;
+  const r = refScale({ front: 490, rear: 21.5, ground: 286.5 }, x0, x1);
+  const top = r.y(135), bottom = r.y(272);
+  const winTop = r.y(146), belt = r.y(204);
+  const rearR = r.len(24.5);
+  const poly = (pts: Pt[], rad: number) => roundedPoly(pts.map(([px, py]): Pt => [r.x(px), r.y(py)]), rad);
+  const pane = (a: number, b: number) => rr(r.x(a), r.y(148.5), r.x(b) - r.x(a), r.y(203) - r.y(148.5), 1.2);
+  const vline = (px: number, y0: number, y1: number) => `M${r.x(px)} ${r.y(y0)} V${r.y(y1)}`;
   return {
-    x0, x1, top, bottom, ground: GROUND, wheelR: 12, axles: [104, 228], rearR: 8,
-    front: `H${x1 - 16} Q${x1 - 5} ${f(top)} ${x1 - 4} ${f(top + 9)} L${x1} ${bottom - 16} V${bottom - 6} Q${x1} ${bottom} ${x1 - 6} ${bottom}`,
+    x0, x1, top, bottom, ground: GROUND, wheelR: r.len(20), archGap: r.len(3), axles: [r.x(175), r.x(425)], rearR,
+    // frente: o teto arredonda na quina, o para-brisa desce inclinado até o farol e a frente fica vertical até o para-choque
+    front: `H${r.x(405)} C${r.x(432)} ${top} ${r.x(450)} ${r.y(140)} ${r.x(458)} ${r.y(156)} L${r.x(488)} ${r.y(227)} `
+      + `Q${x1} ${r.y(232)} ${x1} ${r.y(240)} V${r.y(266)} Q${x1} ${bottom} ${r.x(484)} ${bottom}`,
+    // traseira: quase vertical, canto de cima largo e o de baixo recolhido (ângulo de saída)
+    rear: `H${r.x(37)} Q${r.x(28)} ${bottom} ${r.x(26)} ${r.y(262)} L${x0} ${r.y(242)} V${r.y(160)} C${x0} ${r.y(141)} ${r.x(30)} ${top} ${f(x0 + rearR)} ${top} Z`,
     winTop, belt,
+    // faixa escura das janelas (vidro colado): o canto de baixo sobe na traseira
+    frame: poly([[30, 147], [347, 147], [347, 205], [111, 205], [34, 190], [30, 186]], 1.5),
     glass: [
-      roundedPoly([[x1 - 10, top - 1], [x1 + 3, top - 1], [x1 + 3, bottom - 23], [x1 - 5, bottom - 23]], 1.5),
-      door.glass,
-      paneRow(x0 + 9, 239, 4, winTop, belt - 1.5 - winTop),
+      poly([[31.5, 148.5], [109.5, 148.5], [109.5, 203], [34, 188.5], [31.5, 185]], 1.2), // vidro traseiro, que sobe na quina
+      pane(112.5, 188), pane(190.5, 266.5), pane(269.5, 345.5),
+      poly([[350.5, 148], [355, 148], [389, 204], [350.5, 204]], 1.2), // vidro da porta (a coluna inclinada fica na frente)
+      // vidro do motorista e para-brisa: a borda de cima acompanha o teto e a da frente fica atrás da coluna da quina
+      poly([[361, 144], [436, 144], [446, 147.5], [452, 156], [480, 225], [478, 229], [396, 211], [393.5, 207]], 1.5),
     ].join(' '),
-    seams: door.seam,
-    logoX: 166, headY: bottom - 20, tail: [bottom - 38, bottom - 17],
-    doors: [door.door], mirror: { at: [x1 - 4, f(top + 9)], head: [x1 + 3, f(top + 12)], h: 8 },
-    roof: [[128, 54, 3]], clearance: [x0 + 5, x1 - 14], fleet: '2310',
+    // janelinha de correr no vidro traseiro
+    mullions: rr(r.x(57), r.y(152), r.len(11), r.len(21), 0.8),
+    seams: [
+      `M${r.x(30)} ${r.y(243)} H${r.x(347)}`, // linha dos painéis baixos
+      ...[111, 145, 220, 262, 292].map((px) => vline(px, 243, 270)), // portinholas
+      rr(r.x(349), r.y(145), r.len(46), r.y(270.5) - r.y(145), 1.5), // porta
+      vline(458, 246, 270), // painel do para-choque dianteiro
+    ].join(' '),
+    handles: [[r.x(358), r.y(231)]],
+    logoX: r.x(262), headY: r.y(231), tail: [r.y(205), r.y(230)], skirtH: 2.5,
+    markers: [37, 136, 205, 265, 318, 368].map((px) => r.x(px)), markerY: r.y(244.5), markerW: r.len(7),
+    doors: [{ x: r.x(349), w: r.len(46), top: r.y(145) }],
+    mirror: { at: [r.x(450), r.y(148)], head: [r.x(477), r.y(160)], h: r.len(24) },
+    roof: [[r.x(140), r.len(97), r.len(5)]], clearance: [r.x(45), r.x(420)], fleet: '2310',
   };
 }
 

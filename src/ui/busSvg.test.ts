@@ -49,7 +49,10 @@ test('eixos: 2 em cada forma de um andar (o rodoviário de referência é 4×2) 
  *   eixos a 212,5 e 877,5 px da dianteira, faixa de janelas de y 105 a y 194;
  * double deck ("ONIBUS DD", linha de cima, lado das portas, dianteira à direita): 511 px (traseira x 29, dianteira x 540),
  *   teto y 18, base y 149, chão y 161,5, pneu de raio 18,5, eixos a 93,5, 138,5, 367 e 411,75 px da dianteira (8×2),
- *   janelas de cima de y 23,5 a y 57,5 e de baixo de y 81 a y 114.
+ *   janelas de cima de y 23,5 a y 57,5 e de baixo de y 81 a y 114;
+ * micro ("micro 048", foto de lado, dianteira à direita): 468,5 px (traseira x 21,5, dianteira x 490), teto y 135
+ *   (sem o ar-condicionado), base y 272, chão y 286,5, pneu de raio 20, eixos a 65 e 315 px da dianteira, faixa de janelas
+ *   de y 146 a y 204, porta de x 349 a 395 (logo atrás do eixo dianteiro). Foto com perspectiva: incerteza de ~2 px.
  */
 const REF = {
   conv: { total: 218 / 66, body: 218 / 58, axles: [44 / 218, 146 / 218], winTop: 6 / 66, belt: 27 / 66, wheelR: 11 / 66 },
@@ -58,11 +61,12 @@ const REF = {
     total: 511 / 143.5, body: 511 / 131, axles: [93.5 / 511, 138.5 / 511, 367 / 511, 411.75 / 511],
     winTop: 5.5 / 143.5, belt: 96 / 143.5, wheelR: 18.5 / 143.5, decks: [39.5 / 143.5, 63 / 143.5],
   },
+  micro: { total: 468.5 / 151.5, body: 468.5 / 137, axles: [65 / 468.5, 315 / 468.5], winTop: 11 / 151.5, belt: 69 / 151.5, wheelR: 20 / 151.5 },
 };
 const near = (a: number, b: number, tol: number, where: string) => expect(Math.abs(a - b), `${where}: ${a} ≈ ${b}`).toBeLessThan(tol);
 
 test('proporções: comprimento ÷ altura até o chão de cada forma', () => {
-  const target: Record<BusShape, number> = { van: 2.4, micro: 3.0, conv: REF.conv.total, rodo: REF.rodo.total, dd: REF.dd.total };
+  const target: Record<BusShape, number> = { van: 2.4, micro: REF.micro.total, conv: REF.conv.total, rodo: REF.rodo.total, dd: REF.dd.total };
   for (const shape of BUS_SHAPES) {
     const s = BUS_SILHOUETTES[shape];
     near((s.x1 - s.x0) / (s.ground - s.top), target[shape], 0.05, shape);
@@ -76,8 +80,8 @@ test('proporções: comprimento ÷ altura até o chão de cada forma', () => {
   expect(Math.min(...oneDeck.map((m) => BUS_SILHOUETTES[m].top))).toBe(BUS_SILHOUETTES.rodo.top);
 });
 
-test('convencional, rodoviário e double deck seguem a referência: carroceria, eixos, janelas e rodas', () => {
-  for (const shape of ['conv', 'rodo', 'dd'] as const) {
+test('micro, convencional, rodoviário e double deck seguem a referência: carroceria, eixos, janelas e rodas', () => {
+  for (const shape of ['micro', 'conv', 'rodo', 'dd'] as const) {
     const s = BUS_SILHOUETTES[shape], ref = REF[shape];
     const len = s.x1 - s.x0, hgt = s.ground - s.top;
     near(len / (s.bottom - s.top), ref.body, 0.05, `${shape} carroceria sem rodas`);
@@ -239,4 +243,23 @@ test('double deck: uma cava por eixo no tandem, respiro com aletas, lanternas re
   // o simples (mapa) não leva esses detalhes
   const simple = busSvg(art({ shape: 'dd' }), { detail: 'simple' });
   for (const part of ['vents', 'markers', 'reflectors']) expect(simple.querySelector(`[data-part="${part}"]`), part).toBeNull();
+});
+
+test('micro: porta logo atrás do eixo dianteiro, faixa de janelas de vidro colado, lanternas e janelinha de correr', () => {
+  const s = BUS_SILHOUETTES.micro, len = s.x1 - s.x0;
+  // porta medida na referência (468,5 px, traseira em x 21,5): de x 349 com 46 px, entre a última janela e a cava dianteira
+  const [door] = s.doors ?? [];
+  near((door!.x - s.x0) / len, (349 - 21.5) / 468.5, 0.005, 'porta: início');
+  near(door!.w / len, 46 / 468.5, 0.005, 'porta: largura');
+  expect(door!.x + door!.w).toBeLessThan(Math.max(...s.axles) - s.wheelR);
+  expect(door!.x).toBeGreaterThan(Math.min(...s.axles) + s.wheelR);
+  const full = busSvg(art({ shape: 'micro' }));
+  // faixa escura atrás dos vidros (vidro colado) e a janelinha de correr no vidro traseiro
+  expect(s.frame).toBeDefined();
+  expect(full.querySelector('[data-region="windows"] [data-part="mullions"]')).not.toBeNull();
+  expect(full.querySelector('[data-region="lights"] [data-part="markers"]')).not.toBeNull();
+  expect(full.querySelector('[data-region="details"] [data-part="handles"]')).not.toBeNull();
+  // o simples (mapa) não leva esses detalhes
+  const simple = busSvg(art({ shape: 'micro' }), { detail: 'simple' });
+  for (const part of ['mullions', 'markers', 'handles']) expect(simple.querySelector(`[data-part="${part}"]`), part).toBeNull();
 });

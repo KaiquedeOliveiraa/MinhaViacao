@@ -27,8 +27,7 @@ const REFS: Record<string, Ref | null> = {
   conv: { file: 'urbano_parque.png', side: { front: 233, rear: 15, top: 12, ground: 78 } },
   rodo: { file: 'rodoviario_caxiense.png', side: { front: 1238, rear: 83, top: 80, ground: 394.5 }, support: 'rodoviario_g7.png' },
   dd: { file: 'dd_dragao.jpg', side: { front: 540, rear: 29, top: 18, ground: 161.5 }, support: 'dd_catarinense.png' },
-  // micro: ainda sem medidas (a tarefa do micro mede a vista lateral); por ora a referência aparece inteira
-  micro: { file: 'micro_048.jfif', support: 'micro_volare.jfif' },
+  micro: { file: 'micro_048.jfif', side: { front: 490, rear: 21.5, top: 135, ground: 286.5 }, support: 'micro_volare.jfif' },
   van: null,
 };
 
