@@ -320,6 +320,10 @@
 .livery-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .livery-choice { display: grid; justify-items: center; gap: 6px; padding: 8px 4px; text-align: center; }
 .livery-choice .livery-thumb { width: 100%; max-width: 64px; height: auto; }
+.preset-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.preset-choice { display: grid; justify-items: center; gap: 6px; padding: 8px 6px; text-align: center; }
+.preset-choice .livery-thumb { width: 100%; max-width: 64px; height: auto; }
+@media (min-width: 720px) { .preset-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 
 .color-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .color-field {

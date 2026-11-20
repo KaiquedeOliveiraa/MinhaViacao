@@ -1,3 +1,4 @@
+import { LIVERY_PRESETS } from '../data/rivals';
 import { LOGO_ICONS } from '../data/logos';
 import { getCity, nearestCity } from '../sim/catalog';
 import { LIVERY_STYLES, validateCompanyInput, type CompanyInput, type CompanyInputError } from '../sim/newGame';
@@ -93,7 +94,7 @@ export function renderCreateCompany(p: CreateProps): HTMLElement {
   const colorInput = (name: 'primary' | 'secondary', label: string) => {
     const input = h('input', {
       type: 'color', name, class: 'color-input', value: state[name], 'aria-label': label,
-      onInput: () => { state[name] = input.value; refreshPreview(); },
+      onInput: () => { state[name] = input.value; syncPresetPressed(); refreshPreview(); },
     });
     return h('label', { class: 'color-field' }, input, h('span', null, label));
   };
@@ -130,7 +131,7 @@ export function renderCreateCompany(p: CreateProps): HTMLElement {
   const liveryGrid = h('div', { class: 'choice-grid livery-grid' },
     ...LIVERY_STYLES.map((style) => h('button', {
       type: 'button', class: 'choice livery-choice', dataset: { livery: style }, 'aria-pressed': 'false', 'aria-label': LIVERY_LABELS[style],
-      onClick: () => { state.livery = style; setPressed(liveryGrid, 'data-livery', style); refreshPreview(); },
+      onClick: () => { state.livery = style; setPressed(liveryGrid, 'data-livery', style); syncPresetPressed(); refreshPreview(); },
     })),
   );
   function refreshLiveryThumbs() {
@@ -138,6 +139,23 @@ export function renderCreateCompany(p: CreateProps): HTMLElement {
       const style = btn.dataset.livery as LiveryStyle;
       btn.replaceChildren(liveryThumb(style, state.primary, state.secondary), h('span', { class: 'small' }, LIVERY_LABELS[style]));
     }
+  }
+
+  const presetGrid = h('div', { class: 'choice-grid preset-grid' },
+    ...LIVERY_PRESETS.map((x) => h('button', {
+      type: 'button', class: 'choice preset-choice', dataset: { preset: x.id }, 'aria-pressed': 'false',
+      onClick: () => {
+        state.primary = x.primary; state.secondary = x.secondary; state.livery = x.livery;
+        for (const name of ['primary', 'secondary'] as const) form.querySelector<HTMLInputElement>(`[name="${name}"]`)!.value = state[name];
+        setPressed(liveryGrid, 'data-livery', x.livery);
+        syncPresetPressed();
+        refreshPreview();
+      },
+    }, liveryThumb(x.livery, x.primary, x.secondary), h('span', { class: 'small' }, `Inspirada ${x.article ?? 'na'} ${x.inspiredBy}`))),
+  );
+  function syncPresetPressed() {
+    const hit = LIVERY_PRESETS.find((x) => x.primary === state.primary && x.secondary === state.secondary && x.livery === state.livery);
+    setPressed(presetGrid, 'data-preset', hit?.id ?? null);
   }
 
   const field = (label: string, labelFor: string | null, ...children: (Node | null)[]) =>
@@ -151,6 +169,7 @@ export function renderCreateCompany(p: CreateProps): HTMLElement {
     field('Cores', null, h('div', { class: 'color-row' }, colorInput('primary', 'Cor primária'), colorInput('secondary', 'Cor secundária')), errorSlot('cor')),
     field('Logo', null, iconGrid, uploadButton, fileInput, uploadError, errorSlot('logo')),
     field('Pintura padrão', null, liveryGrid, errorSlot('pintura')),
+    field('Inspiradas em viações conhecidas', null, presetGrid),
   );
 
   const actions = h('div', { class: 'create-actions' },
@@ -184,6 +203,7 @@ export function renderCreateCompany(p: CreateProps): HTMLElement {
   if (state.logo.kind === 'icon') setPressed(iconGrid, 'data-icon', state.logo.iconId);
   else uploadButton.setAttribute('aria-pressed', 'true');
   setPressed(liveryGrid, 'data-livery', state.livery);
+  syncPresetPressed();
   refreshPreview();
 
   return h('div', { class: 'create-page' },

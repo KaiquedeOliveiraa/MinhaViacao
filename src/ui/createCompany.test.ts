@@ -2,6 +2,8 @@
 import { expect, test } from 'vitest';
 import type { CompanyInput } from '../sim/newGame';
 import { testCatalog, testCompany } from '../sim/testkit';
+import { LIVERY_PRESETS } from '../data/rivals';
+import { isValidColor, isValidLivery } from '../sim/newGame';
 import { renderCreateCompany, type CreateProps } from './createCompany';
 
 const mount = (over: Partial<CreateProps> = {}) => {
@@ -51,4 +53,43 @@ test('a escolha fica marcada para quem usa leitor de tela', () => {
   click('[data-city="beta"]');
   expect(el.querySelector('[data-city="beta"]')!.getAttribute('aria-pressed')).toBe('true');
   expect(el.querySelector('[data-city="alfa"]')!.getAttribute('aria-pressed')).toBe('false');
+});
+
+test('há 7 pinturas inspiradas, com ids únicos e cores e estilo válidos', () => {
+  expect(LIVERY_PRESETS).toHaveLength(7);
+  expect(new Set(LIVERY_PRESETS.map(x => x.id)).size).toBe(7);
+  for (const x of LIVERY_PRESETS) {
+    expect(isValidColor(x.primary) && isValidColor(x.secondary)).toBe(true);
+    expect(isValidLivery(x.livery)).toBe(true);
+  }
+});
+test('a tela mostra um botão por pintura inspirada, com o nome vindo dos dados', () => {
+  const { el } = mount();
+  const btns = [...el.querySelectorAll<HTMLElement>('[data-preset]')];
+  expect(btns.map(b => b.dataset.preset)).toEqual(LIVERY_PRESETS.map(x => x.id));
+  LIVERY_PRESETS.forEach((x, i) => expect(btns[i]!.textContent).toContain(`Inspirada ${x.article ?? 'na'} ${x.inspiredBy}`));
+  expect(el.textContent).toContain('Inspiradas em viações conhecidas');
+});
+test('tocar numa pintura inspirada aplica cores e estilo à tela, à prévia e ao envio', () => {
+  const x = LIVERY_PRESETS[1]!;
+  const { el, submitted, type, click } = mount();
+  type('[name="name"]', 'Expresso Catarina'); click('[data-city="gama"]');
+  click(`[data-preset="${x.id}"]`);
+  expect(el.querySelector<HTMLInputElement>('[name="primary"]')!.value).toBe(x.primary);
+  expect(el.querySelector<HTMLInputElement>('[name="secondary"]')!.value).toBe(x.secondary);
+  expect(el.querySelector(`[data-livery="${x.livery}"]`)!.getAttribute('aria-pressed')).toBe('true');
+  expect(el.querySelector(`[data-preset="${x.id}"]`)!.getAttribute('aria-pressed')).toBe('true');
+  expect(el.querySelector('[data-preview] [data-region="body"]')!.getAttribute('fill')).toBe(x.primary);
+  click('[data-action="submit"]');
+  expect(submitted[0]).toMatchObject({ primaryColor: x.primary, secondaryColor: x.secondary, defaultLivery: x.livery });
+});
+test('mudar uma cor depois da pintura inspirada solta a marcação dela', () => {
+  const x = LIVERY_PRESETS[0]!;
+  const { el, type, click } = mount();
+  click(`[data-preset="${x.id}"]`);
+  type('[name="primary"]', '#123456');
+  expect(el.querySelector(`[data-preset="${x.id}"]`)!.getAttribute('aria-pressed')).toBe('false');
+});
+test('no modo edição as pinturas inspiradas também aparecem', () => {
+  expect(mount({ mode: 'edit', initial: testCompany }).el.querySelectorAll('[data-preset]')).toHaveLength(7);
 });
